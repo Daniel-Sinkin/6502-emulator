@@ -33,10 +33,14 @@ using namespace std::chrono_literals;
 #include "types.hpp"
 #include "utils.hpp"
 
+#include "6502/6502.hpp"
+
 auto main() -> int {
     LOG_INFO("Application starting");
     if (!ENGINE::setup()) PANIC("Setup failed!");
     LOG_INFO("Engine setup complete");
+
+    global.cpu = mos6502::cpu();
 
     global.is_running = true;
     global.sim.run_start_time = std::chrono::steady_clock::now();

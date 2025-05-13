@@ -68,7 +68,7 @@ namespace ENGINE {
     float ddpi;
     if (SDL_GetDisplayDPI(0, &ddpi, nullptr, nullptr) == 0 && ddpi > 0.0f) {
         dpi_scale = ddpi / 96.0f;
-        if (dpi_scale > 1.5f) dpi_scale = 1.0f; // Cap it for Retina
+        if (dpi_scale > 1.5f) dpi_scale = 1.5f; // Cap it for Retina
     }
 
     constexpr float base_font_size = 11.0f;

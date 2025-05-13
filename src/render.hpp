@@ -11,10 +11,22 @@
 
 namespace RENDER {
 inline auto display_grid() -> void {
-    constexpr int pixel_size = 10;
-
-    ImGui::Begin("6502-Emulator");
-    ImGui::End();
+    { // 6502-Emulator
+        ImGui::Begin("6502-Emulator");
+        ImGui::Text("PC   0x%04X", global.cpu.PC);
+        ImGui::Text("A    0x%02X", global.cpu.A);
+        ImGui::Text("X    0x%02X", global.cpu.X);
+        ImGui::Text("Y    0x%02X", global.cpu.Y);
+        ImGui::Text("SP   0x%02X", global.cpu.SP);
+        ImGui::Text("P    0x%02X", global.cpu.P);
+        ImGui::Text("NMI  %s", global.cpu.nmi ? "true" : "false");
+        ImGui::Text("IRQ  %s", global.cpu.irq ? "true" : "false");
+        ImGui::Text("SYNC %s", global.cpu.sync ? "true" : "false");
+        ImGui::Text("RDY  %s", global.cpu.rdy ? "true" : "false");
+        ImGui::Text("DB   0x%02X", global.cpu.data_bus);
+        ImGui::Text("RW   0x%02X", global.cpu.rw);
+        ImGui::End();
+    }
 }
 
 inline auto gui_debug() -> void {

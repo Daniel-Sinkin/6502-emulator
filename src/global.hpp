@@ -4,6 +4,7 @@
 #include <chrono>
 #include <imgui.h>
 
+#include "6502/6502.hpp"
 #include "constants.hpp"
 #include "gl.hpp"
 #include "types.hpp"
@@ -63,5 +64,6 @@ struct Global {
     InputState input;
     ColorPalette color;
     AudioState audio;
+    mos6502::cpu cpu;
 };
 inline Global global;
