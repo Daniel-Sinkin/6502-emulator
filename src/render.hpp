@@ -10,6 +10,7 @@
 
 namespace RENDER {
 inline auto cpu_register(mos6502::CPU &cpu) -> void {
+    ImGui::Text("Registers");
     if (ImGui::BeginTable("cpu_registers", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV)) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -44,9 +45,16 @@ inline auto cpu_register(mos6502::CPU &cpu) -> void {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         ImGui::Text("RDY  %s", cpu.rdy ? "true" : "false");
-
+        ImGui::TableSetColumnIndex(1);
+        ImGui::Text("TMP  %d", cpu.tmp);
         ImGui::EndTable();
     }
+    ImGui::Text(
+        "%s %s (0x%02X) [%d]",
+        mos6502::to_string(cpu.instr.mode),
+        mos6502::to_string(cpu.instr.type),
+        cpu.instr.opcode,
+        cpu.instr_counter);
 }
 inline auto gui_debug() -> void {
     ImGui_ImplOpenGL3_NewFrame();
@@ -73,12 +81,12 @@ inline auto gui_debug() -> void {
                          sizeof(mos6502::CPUSnapshot)));
     ImGui::End();
 
-    ImGui::Begin("Registers");
+    ImGui::Begin("CPU");
     cpu_register(global.cpu);
     ImGui::End();
 
     if (!global.cpu_snapshots.empty()) {
-        ImGui::Begin("Registers (Snapshot)");
+        ImGui::Begin("CPU (Snapshot)");
         cpu_register(global.cpu_snapshots.top().cpu);
         ImGui::End();
     }

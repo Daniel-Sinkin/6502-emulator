@@ -41,9 +41,13 @@ auto main() -> int {
     LOG_INFO("Engine setup complete");
 
     global.cpu = mos6502::CPU();
-    global.cpu.mem[0] =
+    global.cpu.mem[0] = 0xA9;
+    global.cpu.mem[1] = 0x44;
+    global.cpu.mem[2] = 0x4C;
+    global.cpu.mem[3] = 0x02;
+    global.cpu.mem[4] = 0x00;
 
-        global.is_running = true;
+    global.is_running = true;
     global.sim.run_start_time = std::chrono::steady_clock::now();
     global.sim.frame_start_time = global.sim.run_start_time;
     constexpr std::chrono::milliseconds instruction_interval{250};
@@ -66,7 +70,7 @@ auto main() -> int {
                 if (global.cpu_snapshots.size() > 100) {
                     LOG_WARN("There are more than 100 Snapshots stored, currently we copy entire memory buffer for every snapshot!");
                 }
-                mos6502::cpu_tick(global.cpu);
+                mos6502::tick(global.cpu);
                 global.sim.step_once = false;
             } else if (global.sim.step_back) {
                 if (!global.cpu_snapshots.empty()) {
@@ -78,7 +82,7 @@ auto main() -> int {
                 global.sim.step_back = false;
             }
         } else {
-            mos6502::cpu_tick(global.cpu);
+            mos6502::tick(global.cpu);
         }
 
         RENDER::gui_debug();
