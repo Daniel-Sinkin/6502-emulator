@@ -72,7 +72,7 @@ inline auto gui_debug() -> void {
     ImGui::Text("Delta Time (ms): %.3f", global.sim.delta_time.count());
     ImGui::Text("Mouse Position: (%.3f, %.3f)",
         global.input.mouse_pos.x, global.input.mouse_pos.y);
-    ImGui::Text("Is paused        %s", global.sim.is_debugging ? "true" : "false");
+    ImGui::Text("Is Debugging %s", global.sim.is_debugging ? "true" : "false");
     ImGui::Text("Is Stepping      %s", global.sim.step_once ? "true" : "false");
     ImGui::Text("Is Back Stepping %s", global.sim.step_back ? "true" : "false");
     ImGui::Text("CPU snapshots %zu (%.2f MB)",

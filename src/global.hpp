@@ -11,8 +11,8 @@
 #include "gl.hpp"
 #include "types.hpp"
 
-using TYPES::Color;
 using TYPES::Position;
+using TYPES::COLOR::Color;
 
 struct RendererState {
     SDL_Window *window = nullptr;
@@ -43,7 +43,7 @@ struct SimulationState {
     std::chrono::steady_clock::time_point frame_start_time;
     std::chrono::duration<float> delta_time;
     std::chrono::duration<float> total_runtime;
-    bool is_debugging = true;
+    bool is_debugging = false;
     bool step_once = false;
     bool step_back = false;
 
@@ -57,7 +57,7 @@ struct InputState {
 };
 
 struct ColorPalette {
-    Color background = TYPES::color_from_u8(15, 15, 21);
+    Color background = TYPES::COLOR::from_u8(15, 15, 21);
     Color pixel_on = Color{1.0f, 1.0f, 1.0f};
     Color pixel_off = Color{0.0f, 0.0f, 0.0f};
 };
@@ -79,6 +79,16 @@ struct Global {
 
     auto validate() -> void {
         sim.validate();
+    }
+    auto debug_activate() -> void {
+        sim.is_debugging = true;
+        color.background = CONSTANTS::COLOR::background_debug;
+    }
+    auto debug_deactivate() -> void {
+        sim.is_debugging = true;
+        sim.step_once = false;
+        sim.step_back = false;
+        color.background = CONSTANTS::COLOR::background;
     }
 };
 inline Global global;

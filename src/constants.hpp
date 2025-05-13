@@ -63,11 +63,13 @@ inline constexpr std::array<unsigned int, 48> circle_indices = {
     0, 16, 1};
 
 namespace COLOR {
-inline constexpr glm::vec3 white = {1.0f, 1.0f, 1.0f};
-inline constexpr glm::vec3 black = {0.0f, 0.0f, 0.0f};
-inline constexpr glm::vec3 red = {1.0f, 0.0f, 0.0f};
-inline constexpr glm::vec3 green = {0.0f, 1.0f, 0.0f};
-inline constexpr glm::vec3 blue = {0.0f, 0.0f, 1.0f};
+inline constexpr TYPES::COLOR::Color white = {1.0f, 1.0f, 1.0f};
+inline constexpr TYPES::COLOR::Color black = {0.0f, 0.0f, 0.0f};
+inline constexpr TYPES::COLOR::Color red = {1.0f, 0.0f, 0.0f};
+inline constexpr TYPES::COLOR::Color green = {0.0f, 1.0f, 0.0f};
+inline constexpr TYPES::COLOR::Color blue = {0.0f, 0.0f, 1.0f};
+inline constexpr TYPES::COLOR::Color background = TYPES::COLOR::from_u8(15, 15, 21);
+inline constexpr TYPES::COLOR::Color background_debug = TYPES::COLOR::from_u8(31, 34, 56);
 } // namespace COLOR
 
 inline constexpr char const *fp_shader_dir = "assets/shaders/";

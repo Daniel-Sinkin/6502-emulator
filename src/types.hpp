@@ -19,12 +19,13 @@ struct Position {
     float y;
 };
 
-[[nodiscard]] inline auto to_string(const Position &pos) -> std::string {
+[[nodiscard]] inline auto
+to_string(const Position &pos) -> std::string {
     return "(" + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ")";
 }
 
 // Updates global.input.mouse_pos in normalized window coordinates
-inline std::ostream &operator<<(std::ostream &os, const Position &p) {
+inline auto operator<<(std::ostream &os, const Position &p) -> std::ostream & {
     return os
            << "Position("
            << p.x << ", "
@@ -35,40 +36,55 @@ inline std::ostream &operator<<(std::ostream &os, const Position &p) {
 [[nodiscard]] auto position_to_vec2(const Position &pos) -> vec2 {
     return vec2{pos.x, pos.y};
 }
+
 [[nodiscard]] auto vec2_to_position(const vec2 &vec) -> Position {
     return Position{vec.x, vec.y};
 }
+
 [[nodiscard]] auto distance(const Position &p1, const Position &p2) -> float {
     return glm::distance(position_to_vec2(p1), position_to_vec2(p2));
 }
 
+namespace COLOR {
 struct Color {
     float r, g, b;
 };
 
-[[nodiscard]] auto color_to_vec3(const Color &color) -> vec3 {
+[[nodiscard]] constexpr auto
+to_vec3(const Color &color) -> vec3 {
     return vec3{color.r, color.g, color.b};
 }
-[[nodiscard]] auto vec3_to_color(const vec3 &vec) -> Color {
+
+[[nodiscard]] constexpr auto
+from_vec3(const vec3 &vec) -> Color {
     return Color{vec.x, vec.y, vec.z};
 }
-[[nodiscard]] auto color_from_u8(uint8_t r, uint8_t g, uint8_t b) -> Color {
+
+[[nodiscard]] constexpr auto
+from_u8(uint8_t r, uint8_t g, uint8_t b) -> Color {
     return Color{r / 255.0f, g / 255.0f, b / 255.0f};
 }
-[[nodiscard]] auto color_from_u8(const std::array<uint8_t, 3> &rgb) -> Color {
+
+[[nodiscard]] constexpr auto
+from_u8(const std::array<uint8_t, 3> &rgb) -> Color {
     return Color{rgb[0] / 255.0f, rgb[1] / 255.0f, rgb[2] / 255.0f};
 }
-[[nodiscard]] auto color_multiply(const Color c1, const Color c2) -> Color {
+
+[[nodiscard]] constexpr auto
+multiply(const Color c1, const Color c2) -> Color {
     return Color{c1.r * c2.r, c1.g * c2.g, c1.b * c2.b};
 }
-[[nodiscard]] auto color_mix(const Color &c1, const Color &c2, float t) -> Color {
+
+[[nodiscard]] constexpr auto
+mix(const Color &c1, const Color &c2, float t) -> Color {
     return {
         c1.r * (1.0f - t) + c2.r * t,
         c1.g * (1.0f - t) + c2.g * t,
         c1.b * (1.0f - t) + c2.b * t};
 }
 
-inline std::ostream &operator<<(std::ostream &os, const Color &c) {
+inline auto
+operator<<(std::ostream &os, const Color &c) -> std::ostream & {
     return os
            << "Color("
            << c.r << ", "
@@ -76,23 +92,27 @@ inline std::ostream &operator<<(std::ostream &os, const Color &c) {
            << c.b
            << ")";
 }
+} // namespace COLOR
 struct Rect {
     Position position;
     float width;
     float height;
 };
 
-[[nodiscard]] auto rect_point_inside(const Rect &rect, const Position &pos) -> bool {
+[[nodiscard]] auto
+rect_point_inside(const Rect &rect, const Position &pos) -> bool {
     return pos.x >= rect.position.x &&
            pos.x <= rect.position.x + rect.width &&
            pos.y >= rect.position.y - rect.height &&
            pos.y <= rect.position.y;
 }
-[[nodiscard]] auto get_center_position(const Rect &rect) -> Position {
+[[nodiscard]] auto
+get_center_position(const Rect &rect) -> Position {
     return Position{rect.position.x + rect.width / 2.0f, rect.position.y - rect.height / 2.0f};
 }
 
-[[nodiscard]] auto check_collision(const Rect &r1, const Rect &r2) -> bool {
+[[nodiscard]] auto
+check_collision(const Rect &r1, const Rect &r2) -> bool {
     bool xcoll = r1.position.x < r2.position.x + r2.width &&
                  r1.position.x + r1.width > r2.position.x;
 
@@ -110,7 +130,8 @@ enum class CollisionDirection {
     Bottom
 };
 
-[[nodiscard]] auto check_collision_directional(const Rect &b1, const Rect &b2) -> CollisionDirection {
+[[nodiscard]] auto
+check_collision_directional(const Rect &b1, const Rect &b2) -> CollisionDirection {
     float left1 = b1.position.x;
     float right1 = b1.position.x + b1.width;
     float top1 = b1.position.y;
@@ -148,6 +169,6 @@ enum class CollisionDirection {
 }
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Position, x, y)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Color, r, g, b)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(COLOR::Color, r, g, b)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Rect, position, width, height)
 } // namespace TYPES

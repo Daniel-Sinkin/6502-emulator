@@ -41,11 +41,14 @@ auto main() -> int {
     LOG_INFO("Engine setup complete");
 
     global.cpu = mos6502::CPU();
-    global.cpu.mem[0] = 0xA9;
-    global.cpu.mem[1] = 0x44;
-    global.cpu.mem[2] = 0x4C;
-    global.cpu.mem[3] = 0x02;
-    global.cpu.mem[4] = 0x00;
+    Word addr = 0x0000;
+    mos6502::program_writer(global.cpu, 0xA9, addr);
+    mos6502::program_writer(global.cpu, 0x44, addr);
+    mos6502::program_writer(global.cpu, 0x4C, addr);
+    mos6502::program_writer(global.cpu, 0x02, addr);
+    mos6502::program_writer(global.cpu, 0x00, addr);
+
+    global.debug_activate();
 
     global.is_running = true;
     global.sim.run_start_time = std::chrono::steady_clock::now();

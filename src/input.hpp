@@ -22,33 +22,40 @@ inline auto handle_event(const SDL_Event &event) -> void {
     ImGui_ImplSDL2_ProcessEvent(&event);
 
     switch (event.type) {
-    case SDL_QUIT:
-        LOG_INFO("Received SDL_QUIT event");
-        global.is_running = false;
-        break;
-
     case SDL_KEYDOWN: {
-        if (event.key.keysym.sym == SDLK_SPACE) {
+        switch (event.key.keysym.sym) {
+        case SDLK_SPACE:
             if (global.sim.is_debugging) {
                 global.sim.step_once = false;
                 global.sim.step_back = false;
                 global.sim.is_debugging = false;
-                // Flushes the snapshot buffer
+                // Flush the snapshot buffer
                 std::stack<mos6502::CPUSnapshot>().swap(global.cpu_snapshots);
             } else {
                 global.sim.is_debugging = true;
             }
-        } else if (event.key.keysym.sym == SDLK_n) {
+            // apply the correct background right when we toggle
+            global.color.background = (global.sim.is_debugging ? CONSTANTS::COLOR::background_debug : CONSTANTS::COLOR::background);
+            break;
+
+        case SDLK_n:
             global.sim.is_debugging = true;
             global.sim.step_once = true;
             global.sim.step_back = false;
-        } else if (event.key.keysym.sym == SDLK_b) {
+            global.color.background = CONSTANTS::COLOR::background_debug;
+            break;
+
+        case SDLK_b:
             global.sim.is_debugging = true;
             global.sim.step_once = false;
             global.sim.step_back = true;
-        } else if (event.key.keysym.sym == SDLK_ESCAPE) {
+            global.color.background = CONSTANTS::COLOR::background_debug;
+            break;
+
+        case SDLK_ESCAPE:
             LOG_INFO("Escape key pressed — exiting");
             global.is_running = false;
+            break;
         }
         break;
     }

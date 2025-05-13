@@ -145,6 +145,10 @@ auto exec_jmp_absolute(CPU &cpu) -> void {
     }
 }
 
+auto program_writer(CPU &cpu, Byte value, Word &addr) -> void {
+    cpu.mem[addr++] = value;
+}
+
 std::array<Instruction, 2> instructions{
     {{InstructionType::lda, 0xA9, AddressingMode::immediate, exec_lda_immediate},
         {InstructionType::jmp, 0x4C, AddressingMode::absolute, exec_jmp_absolute}}};

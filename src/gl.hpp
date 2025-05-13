@@ -11,8 +11,8 @@
 
 #include "log.hpp"
 #include "types.hpp"
-using TYPES::Color;
 using TYPES::Rect;
+using TYPES::COLOR::Color;
 
 namespace GL {
 using VAO = GLuint;
