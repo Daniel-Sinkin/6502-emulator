@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "cmake-debug",
+            "compilerPath": "/usr/bin/clang++", // or wherever your clang++/g++ lives
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "intelliSenseMode": "macos-clang-x64", // match your platform
+            "cStandard": "c11",
+            "cppStandard": "c++20",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/build/_deps"
+                ], // optional — lets “Go to Definition” find your deps quickly
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}

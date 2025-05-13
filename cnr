@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd build
+make -j"$(sysctl -n hw.logicalcpu 2>/dev/null || nproc || echo 1)"
+./main
