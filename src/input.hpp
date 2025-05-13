@@ -28,7 +28,25 @@ inline auto handle_event(const SDL_Event &event) -> void {
         break;
 
     case SDL_KEYDOWN: {
-        if (event.key.keysym.sym == SDLK_ESCAPE) {
+        if (event.key.keysym.sym == SDLK_SPACE) {
+            if (global.sim.is_debugging) {
+                global.sim.step_once = false;
+                global.sim.step_back = false;
+                global.sim.is_debugging = false;
+                // Flushes the snapshot buffer
+                std::stack<mos6502::CPUSnapshot>().swap(global.cpu_snapshots);
+            } else {
+                global.sim.is_debugging = true;
+            }
+        } else if (event.key.keysym.sym == SDLK_n) {
+            global.sim.is_debugging = true;
+            global.sim.step_once = true;
+            global.sim.step_back = false;
+        } else if (event.key.keysym.sym == SDLK_b) {
+            global.sim.is_debugging = true;
+            global.sim.step_once = false;
+            global.sim.step_back = true;
+        } else if (event.key.keysym.sym == SDLK_ESCAPE) {
             LOG_INFO("Escape key pressed — exiting");
             global.is_running = false;
         }

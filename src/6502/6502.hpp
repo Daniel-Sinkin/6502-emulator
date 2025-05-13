@@ -10,7 +10,17 @@ using TYPES::Word;
 
 namespace mos6502 {
 
-struct cpu {
+enum class InstructionType {
+    LDA
+};
+
+struct Instruction {
+    const char *mnemonic;
+    const char *descr;
+    int n_cycles;
+};
+
+struct CPU {
     Word PC = 0x0000;
     Byte A = 0x00;
     Byte X = 0x00;
@@ -31,5 +41,12 @@ struct cpu {
 
     uint64_t cycles = 0;
 };
+struct CPUSnapshot {
+    CPU cpu;
+};
+
+inline auto cpu_tick(CPU &cpu) -> void {
+    ++cpu.PC;
+}
 
 } // namespace mos6502

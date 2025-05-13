@@ -40,9 +40,10 @@ auto main() -> int {
     if (!ENGINE::setup()) PANIC("Setup failed!");
     LOG_INFO("Engine setup complete");
 
-    global.cpu = mos6502::cpu();
+    global.cpu = mos6502::CPU();
+    global.cpu.mem[0] =
 
-    global.is_running = true;
+        global.is_running = true;
     global.sim.run_start_time = std::chrono::steady_clock::now();
     global.sim.frame_start_time = global.sim.run_start_time;
     constexpr std::chrono::milliseconds instruction_interval{250};
@@ -50,12 +51,36 @@ auto main() -> int {
     auto last_instruction_time = std::chrono::steady_clock::now();
     LOG_INFO("Entering main loop");
     while (global.is_running) {
+        global.validate();
+
         auto now = std::chrono::steady_clock::now();
         global.sim.delta_time = now - global.sim.frame_start_time;
         global.sim.frame_start_time = now;
         global.sim.total_runtime = now - global.sim.run_start_time;
 
         INPUT::handle_input();
+
+        if (global.sim.is_debugging) {
+            if (global.sim.step_once) {
+                global.cpu_snapshots.push(mos6502::CPUSnapshot{.cpu = global.cpu});
+                if (global.cpu_snapshots.size() > 100) {
+                    LOG_WARN("There are more than 100 Snapshots stored, currently we copy entire memory buffer for every snapshot!");
+                }
+                mos6502::cpu_tick(global.cpu);
+                global.sim.step_once = false;
+            } else if (global.sim.step_back) {
+                if (!global.cpu_snapshots.empty()) {
+                    global.cpu = global.cpu_snapshots.top().cpu;
+                    global.cpu_snapshots.pop();
+                } else {
+                    LOG_WARN("Tried to step back but empyt snapshot registry");
+                }
+                global.sim.step_back = false;
+            }
+        } else {
+            mos6502::cpu_tick(global.cpu);
+        }
+
         RENDER::gui_debug();
         RENDER::frame();
 

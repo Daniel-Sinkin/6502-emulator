@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stack>
+
 #include <SDL.h>
 #include <chrono>
 #include <imgui.h>
@@ -41,6 +43,13 @@ struct SimulationState {
     std::chrono::steady_clock::time_point frame_start_time;
     std::chrono::duration<float> delta_time;
     std::chrono::duration<float> total_runtime;
+    bool is_debugging = true;
+    bool step_once = false;
+    bool step_back = false;
+
+    auto validate() -> void {
+        if (step_once && !is_debugging) PANIC("Step once true but not debugging!");
+    }
 };
 
 struct InputState {
@@ -64,6 +73,12 @@ struct Global {
     InputState input;
     ColorPalette color;
     AudioState audio;
-    mos6502::cpu cpu;
+    mos6502::CPU cpu;
+
+    std::stack<mos6502::CPUSnapshot> cpu_snapshots;
+
+    auto validate() -> void {
+        sim.validate();
+    }
 };
 inline Global global;

@@ -11,6 +11,7 @@
 #include "constants.hpp"
 #include "types.hpp"
 
+namespace UTIL {
 [[nodiscard]] inline auto window_normalized_to_ndc(
     const Position &norm_pos,
     float aspect_ratio) -> Position {
@@ -56,3 +57,16 @@ format_duration(std::chrono::duration<float> duration) -> std::string {
         hrs, mins, secs, millis);
     return std::string(buffer);
 }
+
+constexpr double byte_to_kb(std::size_t bytes) {
+    return bytes / 1024.0;
+}
+
+constexpr double byte_to_mb(std::size_t bytes) {
+    return bytes / (1024.0 * 1024.0);
+}
+
+constexpr double byte_to_gb(std::size_t bytes) {
+    return bytes / (1024.0 * 1024.0 * 1024.0);
+}
+} // namespace UTIL
