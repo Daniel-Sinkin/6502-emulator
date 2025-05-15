@@ -68,6 +68,7 @@
         "source_location": "cpp",
         "future": "cpp",
         "typeindex": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "cassert": "cpp"
     }
 }

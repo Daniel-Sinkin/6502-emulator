@@ -2,7 +2,6 @@
 #pragma once
 
 #include "constants.hpp"
-#include "log.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 
@@ -13,9 +12,8 @@ namespace INPUT {
 inline auto update_mouse_position() -> void {
     int mouse_x, mouse_y;
     SDL_GetMouseState(&mouse_x, &mouse_y);
-    global.input.mouse_pos = Position{
-        static_cast<float>(mouse_x) / CONSTANTS::window_width,
-        static_cast<float>(mouse_y) / CONSTANTS::window_height};
+    global.input.mouse_pos_x = static_cast<double>(mouse_x) / CONSTANTS::window_width;
+    global.input.mouse_pos_y = static_cast<double>(mouse_y) / CONSTANTS::window_width;
 }
 
 inline auto handle_event(const SDL_Event &event) -> void {
@@ -53,7 +51,7 @@ inline auto handle_event(const SDL_Event &event) -> void {
             break;
 
         case SDLK_ESCAPE:
-            LOG_INFO("Escape key pressed — exiting");
+            println("Escape key pressed — exiting");
             global.is_running = false;
             break;
         }

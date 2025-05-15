@@ -22,13 +22,11 @@ using std::chrono::steady_clock;
 using namespace std::chrono_literals;
 
 // Project headers
-#include "audio.hpp"
 #include "constants.hpp"
 #include "engine.hpp"
 #include "gl.hpp"
 #include "global.hpp"
 #include "input.hpp"
-#include "log.hpp"
 #include "render.hpp"
 #include "types.hpp"
 #include "utils.hpp"
@@ -36,27 +34,34 @@ using namespace std::chrono_literals;
 #include "6502/6502.hpp"
 
 auto main() -> int {
-    LOG_INFO("Application starting");
-    if (!ENGINE::setup()) PANIC("Setup failed!");
-    LOG_INFO("Engine setup complete");
+    println("Application starting");
+    if (!ENGINE::setup()) assert(false);
+    println("Engine setup complete");
+
+    mos6502::initialize_instructions();
 
     global.cpu = mos6502::CPU();
-    Word addr = 0x0000;
-    mos6502::program_writer(global.cpu, 0xA9, addr);
-    mos6502::program_writer(global.cpu, 0x44, addr);
-    mos6502::program_writer(global.cpu, 0x4C, addr);
-    mos6502::program_writer(global.cpu, 0x02, addr);
-    mos6502::program_writer(global.cpu, 0x00, addr);
+    auto pw = mos6502::ProgramWriter(global.cpu);
+    pw.lda_immediate();
+    pw(0x44);
+    pw.jmp_indirect();
+    pw(0x10);
+    pw(0x00);
+    pw.jmp_absolute();
+    pw(0x00);
+    pw(0x00);
+
+    pw.addr = 0x10;
+    pw(0x50);
+    pw(0x00);
 
     global.debug_activate();
 
     global.is_running = true;
     global.sim.run_start_time = std::chrono::steady_clock::now();
     global.sim.frame_start_time = global.sim.run_start_time;
-    constexpr std::chrono::milliseconds instruction_interval{250};
 
-    auto last_instruction_time = std::chrono::steady_clock::now();
-    LOG_INFO("Entering main loop");
+    println("Entering main loop");
     while (global.is_running) {
         global.validate();
 
@@ -71,7 +76,7 @@ auto main() -> int {
             if (global.sim.step_once) {
                 global.cpu_snapshots.push(mos6502::CPUSnapshot{.cpu = global.cpu});
                 if (global.cpu_snapshots.size() > 100) {
-                    LOG_WARN("There are more than 100 Snapshots stored, currently we copy entire memory buffer for every snapshot!");
+                    println("There are more than 100 Snapshots stored, currently we copy entire memory buffer for every snapshot!");
                 }
                 mos6502::tick(global.cpu);
                 global.sim.step_once = false;
@@ -80,7 +85,7 @@ auto main() -> int {
                     global.cpu = global.cpu_snapshots.top().cpu;
                     global.cpu_snapshots.pop();
                 } else {
-                    LOG_WARN("Tried to step back but empyt snapshot registry");
+                    println("Tried to step back but empyt snapshot registry");
                 }
                 global.sim.step_back = false;
             }
@@ -97,10 +102,10 @@ auto main() -> int {
         global.sim.frame_counter += 1;
     }
 
-    LOG_INFO("Main loop exited");
+    println("Main loop exited");
     ENGINE::cleanup();
-    LOG_INFO("Engine cleanup complete");
-    LOG_INFO("Application exiting successfully");
+    println("Engine cleanup complete");
+    println("Application exiting successfully");
 
     return EXIT_SUCCESS;
 }

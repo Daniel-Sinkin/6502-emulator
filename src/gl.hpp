@@ -1,6 +1,7 @@
 /* danielsinkin97@gmail.com */
 #pragma once
 
+#include <cassert>
 #include <fstream>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -9,7 +10,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "log.hpp"
 #include "types.hpp"
 using TYPES::Rect;
 using TYPES::COLOR::Color;
@@ -28,7 +28,7 @@ public:
     std::unordered_map<std::string, UniformLocation> m_uniforms;
 
     auto bind() const -> void {
-        if (m_id == GL_ZERO) PANIC("Trying to activate uninitialized ShaderProgram!");
+        if (m_id == GL_ZERO) assert(false);
         glUseProgram(m_id);
     }
     static auto unbind() -> void { glUseProgram(GL_ZERO); }
@@ -59,28 +59,24 @@ public:
         if (!success) {
             char info_log[512];
             glGetProgramInfoLog(m_id, 512, nullptr, info_log);
-            LOG_ERR("Shader Program Linking Failed:\n" + std::string(info_log));
-            PANIC("Shader Program linking failed");
+            assert(false);
         }
 
         glDeleteShader(vert);
         glDeleteShader(frag);
-
-        LOG_INFO(std::string("Shader program loaded: ") + vertex_path + " / " + fragment_path);
     }
 
 private:
     [[nodiscard]] auto get_uniform(const std::string &name) const -> UniformLocation {
         auto it = m_uniforms.find(name);
         if (it != m_uniforms.end()) return it->second;
-        PANIC("Uniform not found: " + name);
+        assert(false);
     }
 
     [[nodiscard]] auto compile_shader_from_file(const char *filepath, GLenum type) -> ShaderID {
         std::ifstream in(filepath);
         if (!in) {
-            LOG_ERR("Couldn't open shader file: " + std::string(filepath));
-            PANIC("Shader file open failed");
+            assert(false);
         }
 
         std::ostringstream ss;
@@ -97,8 +93,7 @@ private:
         if (!success) {
             char error_log[512];
             glGetShaderInfoLog(shader, 512, nullptr, error_log);
-            LOG_ERR(std::string("Shader Compilation Failed (") + filepath + "):\n" + error_log);
-            PANIC("Shader compile error");
+            assert(false);
         }
 
         return shader;
@@ -124,7 +119,7 @@ template <size_t VertexCount, size_t IndexCount>
     glBindBuffer(GL_ARRAY_BUFFER, gb.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), static_cast<void *>(nullptr));
     glEnableVertexAttribArray(0);
 
     glGenBuffers(1, &gb.ebo);
@@ -132,10 +127,6 @@ template <size_t VertexCount, size_t IndexCount>
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
 
     glBindVertexArray(0);
-
-    LOG_INFO("Created geometry: VAO = " + std::to_string(gb.vao) +
-             ", VBO = " + std::to_string(gb.vbo) +
-             ", EBO = " + std::to_string(gb.ebo));
 
     return gb;
 }
@@ -152,7 +143,7 @@ inline auto set_color_uniforms(const ShaderProgram &sp, const Color &color) -> v
 
 inline auto draw_simple_vao(const GeometryBuffers &geom, GLsizei index_count) -> void {
     if (geom.vao == GL_ZERO || geom.ebo == GL_ZERO) {
-        PANIC("Attempting to draw with uninitialized geometry!");
+        assert(false);
     }
 
     glBindVertexArray(geom.vao);

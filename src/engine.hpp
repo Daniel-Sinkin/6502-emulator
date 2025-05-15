@@ -1,23 +1,25 @@
 #pragma once
 
+#include <cassert>
+#include <print>
+
+using std::println;
+
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
 #include "imgui.h"
 #include <SDL.h>
 #include <glad/glad.h>
 
-#include "audio.hpp"
 #include "global.hpp"
-#include "log.hpp"
 #include "utils.hpp"
 
 namespace ENGINE {
 [[nodiscard]] inline auto setup() -> bool {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO) != 0) {
-        LOG_ERR(std::string("SDL_Init failed: ") + SDL_GetError());
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
+        println(std::cerr, "{}", SDL_GetError());
         return false;
     }
-    Audio::init();
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -30,14 +32,14 @@ namespace ENGINE {
         CONSTANTS::window_width, CONSTANTS::window_height,
         SDL_WINDOW_OPENGL);
     if (!global.renderer.window) {
-        LOG_ERR(std::string("SDL_CreateWindow failed: ") + SDL_GetError());
+        println(std::cerr, "{}", SDL_GetError());
         SDL_Quit();
         return false;
     }
 
     global.renderer.gl_context = SDL_GL_CreateContext(global.renderer.window);
     if (!global.renderer.gl_context) {
-        LOG_ERR(std::string("SDL_GL_CreateContext failed: ") + SDL_GetError());
+        println(std::cerr, "{}", SDL_GetError());
         SDL_DestroyWindow(global.renderer.window);
         SDL_Quit();
         return false;
@@ -46,8 +48,8 @@ namespace ENGINE {
     SDL_GL_MakeCurrent(global.renderer.window, global.renderer.gl_context);
     SDL_GL_SetSwapInterval(1);
 
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-        LOG_ERR("GLAD initialization failed");
+    if (!gladLoadGLLoader(static_cast<GLADloadproc>(SDL_GL_GetProcAddress))) {
+        println(std::cerr, "{}", SDL_GetError());
         return false;
     }
 
@@ -90,13 +92,12 @@ namespace ENGINE {
 }
 
 inline auto cleanup() -> void {
-    LOG_INFO("Cleaning up engine resources");
+    println("Cleaning up engine resources");
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    Audio::shutdown();
     SDL_GL_DeleteContext(global.renderer.gl_context);
     SDL_DestroyWindow(global.renderer.window);
     SDL_Quit();

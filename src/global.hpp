@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <stack>
 
 #include <SDL.h>
@@ -33,7 +34,7 @@ struct RendererState {
     auto panic_gl(const char *reason) -> void {
         std::cerr << reason << "\n"
                   << gl_error_buffer << "\n";
-        PANIC("GL Error");
+        assert(false);
     }
 };
 
@@ -41,19 +42,20 @@ struct SimulationState {
     int frame_counter = 0;
     std::chrono::steady_clock::time_point run_start_time;
     std::chrono::steady_clock::time_point frame_start_time;
-    std::chrono::duration<float> delta_time;
-    std::chrono::duration<float> total_runtime;
+    std::chrono::duration<double> delta_time;
+    std::chrono::duration<double> total_runtime;
     bool is_debugging = false;
     bool step_once = false;
     bool step_back = false;
 
     auto validate() -> void {
-        if (step_once && !is_debugging) PANIC("Step once true but not debugging!");
+        if (step_once && !is_debugging) assert(false);
     }
 };
 
 struct InputState {
-    Position mouse_pos;
+    double mouse_pos_x;
+    double mouse_pos_y;
 };
 
 struct ColorPalette {
@@ -62,17 +64,12 @@ struct ColorPalette {
     Color pixel_off = Color{0.0f, 0.0f, 0.0f};
 };
 
-struct AudioState {
-    Mix_Chunk *beep_sound = nullptr;
-};
-
 struct Global {
     bool is_running = false;
     RendererState renderer;
     SimulationState sim;
     InputState input;
     ColorPalette color;
-    AudioState audio;
     mos6502::CPU cpu;
 
     std::stack<mos6502::CPUSnapshot> cpu_snapshots;

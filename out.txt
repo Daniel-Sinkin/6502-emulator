@@ -1,0 +1,11 @@
+[  0%] Built target glad-generate-files
+[  0%] Copying assets into build directory
+[ 16%] Built target imgui_impl
+[ 18%] Built target sdl_headers_copy
+[ 19%] Built target glm
+[ 19%] Built target copy_assets
+[ 20%] Built target glad
+[ 20%] Built target SDL2main
+[ 99%] Built target SDL2
+[ 99%] Built target SDL2-static
+[ 99%] Linking CXX executable main

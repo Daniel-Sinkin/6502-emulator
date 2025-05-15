@@ -28,7 +28,7 @@ inline auto cpu_register(mos6502::CPU &cpu) -> void {
         ImGui::TableSetColumnIndex(1);
         ImGui::Text("P    0x%02X", cpu.P);
         ImGui::TableSetColumnIndex(2);
-        ImGui::Text("ADDR 0x%04X", cpu.addr);
+        ImGui::Text("ADDR 0x%04X", cpu.temporary_address_register);
         ImGui::TableSetColumnIndex(3);
         ImGui::Text("DB   0x%02X", cpu.data_bus);
 
@@ -71,7 +71,7 @@ inline auto gui_debug() -> void {
         UTIL::format_duration(global.sim.total_runtime).c_str());
     ImGui::Text("Delta Time (ms): %.3f", global.sim.delta_time.count());
     ImGui::Text("Mouse Position: (%.3f, %.3f)",
-        global.input.mouse_pos.x, global.input.mouse_pos.y);
+        global.input.mouse_pos_x, global.input.mouse_pos_y);
     ImGui::Text("Is Debugging %s", global.sim.is_debugging ? "true" : "false");
     ImGui::Text("Is Stepping      %s", global.sim.step_once ? "true" : "false");
     ImGui::Text("Is Back Stepping %s", global.sim.step_back ? "true" : "false");
@@ -98,38 +98,42 @@ inline auto gui_debug() -> void {
 
     auto draw_memory_window = [&](const char *title,
                                   uint16_t center_addr,
-                                  int display_lines) {
+                                  size_t display_lines) {
         ImGui::Begin(title);
 
-        constexpr int BYTES_PER_LINE = 16;
-        const int mem_size = static_cast<int>(global.cpu.mem.size());
-        const int max_lines = (mem_size + BYTES_PER_LINE - 1) / BYTES_PER_LINE;
-        const int center_ln = center_addr / BYTES_PER_LINE;
-        const int half_ln = display_lines / 2;
+        constexpr size_t BYTES_PER_LINE = 16;
+        size_t mem_size = global.cpu.mem.size();
+        size_t max_lines = (mem_size + BYTES_PER_LINE - 1) / BYTES_PER_LINE;
+        size_t center_ln = center_addr / BYTES_PER_LINE;
+        size_t half_ln = static_cast<size_t>(display_lines / 2);
+        size_t start_ln;
+        if (center_ln > half_ln) {
+            start_ln = center_ln - half_ln;
+        } else {
+            start_ln = 0;
+        }
+        if (start_ln + display_lines > max_lines) {
+            start_ln = (max_lines > display_lines ? max_lines - display_lines : 0);
+        }
 
-        int start_ln = center_ln - half_ln;
-        if (start_ln < 0) start_ln = 0;
-        if (start_ln + display_lines > max_lines)
-            start_ln = max_lines - display_lines;
-        if (start_ln < 0) start_ln = 0;
-
-        for (int line = start_ln; line < start_ln + display_lines; ++line) {
-            const int base = line * BYTES_PER_LINE;
-            ImGui::Text("0x%04X:", base);
+        for (size_t line = start_ln; line < start_ln + display_lines; ++line) {
+            const size_t base = line * BYTES_PER_LINE;
+            ImGui::Text("0x%04zX:", base);
             ImGui::SameLine();
-            for (int j = 0; j < BYTES_PER_LINE; ++j) {
-                const int idx = base + j;
+            for (size_t j = 0; j < BYTES_PER_LINE; ++j) {
+                const size_t idx = base + j;
                 if (idx >= mem_size) break;
 
                 bool is_pc = (idx == global.cpu.PC);
-                bool is_addr = (idx == global.cpu.addr);
+                bool is_addr = (idx == global.cpu.temporary_address_register);
 
-                if (is_pc && is_addr)
+                if (is_pc && is_addr) {
                     ImGui::PushStyleColor(ImGuiCol_Text, COLOR_BOTH);
-                else if (is_pc)
+                } else if (is_pc) {
                     ImGui::PushStyleColor(ImGuiCol_Text, COLOR_PC);
-                else if (is_addr)
+                } else if (is_addr) {
                     ImGui::PushStyleColor(ImGuiCol_Text, COLOR_ADDR);
+                }
 
                 ImGui::Text("%02X", global.cpu.mem[idx]);
 
@@ -142,10 +146,10 @@ inline auto gui_debug() -> void {
     };
 
     /* Full PC-centered memory view */
-    draw_memory_window("Memory (around PC)", global.cpu.PC, 16);
+    draw_memory_window("Memory (around PC)", global.cpu.PC, 16zu);
 
     /* Compact ADDR-centered view */
-    draw_memory_window("Addr Memory Neighborhood", global.cpu.addr, 6);
+    draw_memory_window("Addr Memory Neighborhood", global.cpu.temporary_address_register, 6);
 
     /* ImGui Render */
     ImGui::Render();
@@ -153,8 +157,8 @@ inline auto gui_debug() -> void {
 
 inline auto frame() -> void {
     glViewport(0, 0,
-        (int)global.renderer.imgui_io.DisplaySize.x,
-        (int)global.renderer.imgui_io.DisplaySize.y);
+        static_cast<int>(global.renderer.imgui_io.DisplaySize.x),
+        static_cast<int>(global.renderer.imgui_io.DisplaySize.y));
     glClearColor(global.color.background.r,
         global.color.background.g,
         global.color.background.b,
