@@ -33,26 +33,44 @@ using namespace std::chrono_literals;
 
 #include "6502/6502.hpp"
 
+auto load_example_simple() -> void {
+    auto pw = mos6502::ProgramWriter(global.cpu);
+    pw.lda_immediate();
+    pw(0x44);
+
+    pw.jmp_indirect();
+    pw(0x10);
+    pw(0x00);
+
+    pw.jmp_absolute();
+    pw(0x00);
+    pw(0x00);
+
+    pw.addr = 0x10;
+    pw(0x20);
+
+    pw.addr = 0x20;
+    pw.jmp_absolute();
+    pw(0x20);
+    pw(0x00);
+}
+
 auto main() -> int {
     println("Application starting");
     if (!ENGINE::setup()) assert(false);
     println("Engine setup complete");
 
     mos6502::initialize_instructions();
-
     global.cpu = mos6502::CPU();
+
+    // load_example_simple();
     auto pw = mos6502::ProgramWriter(global.cpu);
     pw.lda_immediate();
-    pw(0x44);
-    pw.jmp_indirect();
-    pw(0x10);
-    pw(0x00);
+    pw(0xFF);
+    pw.and_immediate();
+    pw(0x01);
     pw.jmp_absolute();
-    pw(0x00);
-    pw(0x00);
-
-    pw.addr = 0x10;
-    pw(0x50);
+    pw(0x04);
     pw(0x00);
 
     global.debug_activate();

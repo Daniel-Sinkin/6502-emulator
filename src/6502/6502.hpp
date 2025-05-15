@@ -111,15 +111,14 @@ enum class AddressingMode {
     zero_page,
     accum,
     implied,
-    ind_x,
-    ind_y,
-    z_page_x,
-    z_page_y,
-    abs_x,
-    abs_y,
+    indirect_x,
+    indirect_y,
+    zero_page_x,
+    zero_page_y,
+    absolute_x,
+    absolute_y,
     relative,
     indirect,
-    _enumcount_AdressingMode
 };
 
 inline const char *to_string(AddressingMode mode) {
@@ -136,23 +135,22 @@ inline const char *to_string(AddressingMode mode) {
         return "accumulator";
     case AddressingMode::implied:
         return "implied";
-    case AddressingMode::ind_x:
+    case AddressingMode::indirect_x:
         return "indirect_x";
-    case AddressingMode::ind_y:
+    case AddressingMode::indirect_y:
         return "indirect_y";
-    case AddressingMode::z_page_x:
+    case AddressingMode::zero_page_x:
         return "zero_page_x";
-    case AddressingMode::z_page_y:
+    case AddressingMode::zero_page_y:
         return "zero_page_y";
-    case AddressingMode::abs_x:
+    case AddressingMode::absolute_x:
         return "absolute_x";
-    case AddressingMode::abs_y:
+    case AddressingMode::absolute_y:
         return "absolute_y";
     case AddressingMode::relative:
         return "relative";
     case AddressingMode::indirect:
         return "indirect";
-    case AddressingMode::_enumcount_AdressingMode:
     default:
         assert(false);
     }
@@ -196,10 +194,7 @@ using AddrModeFunc = AddrResult (*)(CPU, bool /*is_read*/, bool /*page_penalty*/
 
 struct Instruction {
     InstructionType type;
-    Byte opcode;
     AddressingMode mode;
-    bool is_read;
-    bool has_page_penalty;
 };
 
 struct Config {
@@ -257,6 +252,20 @@ inline auto set_flag_C(CPU &cpu, bool do_set) -> void {
         cpu.P &= static_cast<Byte>(~C_FLAG);
     }
 }
+inline auto set_flag_D(CPU &cpu, bool do_set) -> void {
+    if (do_set) {
+        cpu.P |= D_FLAG;
+    } else {
+        cpu.P &= static_cast<Byte>(~D_FLAG);
+    }
+}
+inline auto set_flag_I(CPU &cpu, bool do_set) -> void {
+    if (do_set) {
+        cpu.P |= I_FLAG;
+    } else {
+        cpu.P &= static_cast<Byte>(~I_FLAG);
+    }
+}
 
 struct CPUSnapshot {
     CPU cpu;
@@ -289,6 +298,16 @@ public:
     void lda_immediate() { (*this)(0xA9); }
     void jmp_absolute() { (*this)(0x4C); }
     void jmp_indirect() { (*this)(0x6C); }
+    void asl_absolute() { (*this)(0x0E); }
+
+    void and_zeropage() { (*this)(0x25); }
+    void and_immediate() { (*this)(0x29); }
+    void and_zeropage_x() { (*this)(0x35); }
+    void and_absolute() { (*this)(0x2D); }
+    void and_absolute_x() { (*this)(0x3D); }
+    void and_absolute_y() { (*this)(0x39); }
+    void and_indirect_x() { (*this)(0x21); }
+    void and_indirect_y() { (*this)(0x31); }
 
 private:
     CPU &cpu;
@@ -299,13 +318,13 @@ inline auto exec_func(CPU &cpu, optional<Byte> value, optional<Address> addr) ->
         assert(!value.has_value() && !addr.has_value());
     }
     switch (cpu.instr.type) {
-    case InstructionType::lda:
-        set_flags_ZN(cpu, *value);
-        cpu.A = *value;
+    case InstructionType::adc:
+        assert(false);
+    case InstructionType::and_: {
+        cpu.A &= *value;
+        set_flags_ZN(cpu, cpu.A);
         break;
-    case InstructionType::jmp:
-        cpu.PC = *addr;
-        break;
+    }
     case InstructionType::asl: {
         Byte read_value;
         if (cpu.instr.mode == AddressingMode::accum) {
@@ -323,6 +342,53 @@ inline auto exec_func(CPU &cpu, optional<Byte> value, optional<Address> addr) ->
         }
         break;
     }
+    case InstructionType::lda:
+        set_flags_ZN(cpu, *value);
+        cpu.A = *value;
+        break;
+    case InstructionType::jmp:
+        cpu.PC = *addr;
+        break;
+    case InstructionType::nop:
+        break;
+    case InstructionType::sec:
+        set_flag_C(cpu, true);
+        break;
+    case InstructionType::sed:
+        set_flag_D(cpu, true);
+        break;
+    case InstructionType::sei:
+        set_flag_I(cpu, true);
+        break;
+    case InstructionType::sta:
+        cpu.mem[*addr] = cpu.A;
+        break;
+    case InstructionType::stx:
+        cpu.mem[*addr] = cpu.X;
+        break;
+    case InstructionType::sty:
+        cpu.mem[*addr] = cpu.Y;
+        break;
+    case InstructionType::tax:
+        cpu.X = cpu.A;
+        set_flags_ZN(cpu, cpu.X);
+        break;
+    case InstructionType::tay:
+        cpu.Y = cpu.A;
+        set_flags_ZN(cpu, cpu.Y);
+        break;
+    case InstructionType::tsx:
+        cpu.X = cpu.SP;
+        set_flags_ZN(cpu, cpu.X);
+        break;
+    case InstructionType::txs:
+        cpu.SP = cpu.X;
+        set_flags_ZN(cpu, cpu.SP);
+        break;
+    case InstructionType::tya:
+        cpu.A = cpu.Y;
+        set_flags_ZN(cpu, cpu.A);
+        break;
     default:
         assert(false);
     }
@@ -330,22 +396,76 @@ inline auto exec_func(CPU &cpu, optional<Byte> value, optional<Address> addr) ->
 
 std::array<Instruction, 256> instructions{};
 void initialize_instructions() {
-    instructions[0xA9] = {InstructionType::lda, 0xA9, AddressingMode::immediate, true, false};
-    instructions[0x4C] = {InstructionType::jmp, 0x4C, AddressingMode::absolute, true, false};
-    instructions[0x6C] = {InstructionType::jmp, 0x6C, AddressingMode::indirect, true, false};
-    instructions[0x6C] = {InstructionType::asl, 0x0E, AddressingMode::absolute, true, false};
+    instructions[0x00] = {InstructionType::brk, AddressingMode::implied};
+    instructions[0x0E] = {InstructionType::asl, AddressingMode::absolute};
+
+    instructions[0x21] = {InstructionType::and_, AddressingMode::indirect_x};
+    instructions[0x25] = {InstructionType::and_, AddressingMode::zero_page};
+    instructions[0x29] = {InstructionType::and_, AddressingMode::immediate};
+    instructions[0x31] = {InstructionType::and_, AddressingMode::indirect_y};
+    instructions[0x35] = {InstructionType::and_, AddressingMode::zero_page_x};
+    instructions[0x39] = {InstructionType::and_, AddressingMode::absolute_y};
+    instructions[0x2D] = {InstructionType::and_, AddressingMode::absolute};
+    instructions[0x3D] = {InstructionType::and_, AddressingMode::absolute_x};
+
+    instructions[0x4C] = {InstructionType::jmp, AddressingMode::absolute};
+    instructions[0x6C] = {InstructionType::jmp, AddressingMode::indirect};
+
+    instructions[0xA9] = {InstructionType::lda, AddressingMode::immediate};
+
+    instructions[0xA0] = {InstructionType::ldy, AddressingMode::immediate};
+    instructions[0xA4] = {InstructionType::ldy, AddressingMode::zero_page};
+    instructions[0xB9] = {InstructionType::ldy, AddressingMode::zero_page_x};
+    instructions[0xAC] = {InstructionType::ldy, AddressingMode::absolute};
+    instructions[0xBC] = {InstructionType::ldy, AddressingMode::absolute_x};
+
+    instructions[0xBC] = {InstructionType::nop, AddressingMode::implied};
+
+    instructions[0x38] = {InstructionType::sec, AddressingMode::implied};
+
+    instructions[0x78] = {InstructionType::sei, AddressingMode::implied};
+
+    instructions[0x81] = {InstructionType::sta, AddressingMode::indirect_x};
+    instructions[0x85] = {InstructionType::sta, AddressingMode::zero_page};
+    instructions[0x8D] = {InstructionType::sta, AddressingMode::absolute};
+    instructions[0x91] = {InstructionType::sta, AddressingMode::indirect_y};
+    instructions[0x95] = {InstructionType::sta, AddressingMode::zero_page_x};
+    instructions[0x99] = {InstructionType::sta, AddressingMode::absolute_y};
+    instructions[0x9D] = {InstructionType::sta, AddressingMode::absolute_x};
+
+    instructions[0x86] = {InstructionType::stx, AddressingMode::zero_page};
+    instructions[0x96] = {InstructionType::stx, AddressingMode::zero_page_y};
+    instructions[0x8E] = {InstructionType::stx, AddressingMode::absolute};
+
+    instructions[0x84] = {InstructionType::sty, AddressingMode::zero_page};
+    instructions[0x94] = {InstructionType::sty, AddressingMode::zero_page_x};
+    instructions[0x8C] = {InstructionType::sty, AddressingMode::absolute};
+
+    instructions[0xAA] = {InstructionType::tax, AddressingMode::implied};
+
+    instructions[0xA8] = {InstructionType::tay, AddressingMode::implied};
+
+    instructions[0xBA] = {InstructionType::tsx, AddressingMode::implied};
+
+    instructions[0x8A] = {InstructionType::txa, AddressingMode::implied};
+
+    instructions[0x9A] = {InstructionType::txs, AddressingMode::implied};
+
+    instructions[0x98] = {InstructionType::tya, AddressingMode::implied};
 }
 
 inline auto addr_mode(CPU &cpu) -> AddrResult {
     if (cpu.instr_counter < 1) assert(false);
     switch (cpu.instr.mode) {
+    case AddressingMode::implied: // implied
+        assert(cpu.instr_counter == 1);
+        return {AddrResultType::complete};
+    case AddressingMode::zero_page: // operand is zeropage address (hi-byte is zero, address = $00LL)
+        assert(cpu.instr_counter == 1);
+        return {AddrResultType::complete_value, .value = fetch(cpu)};
     case AddressingMode::immediate:
         if (cpu.instr_counter != 1) assert(false);
-        if (cpu.instr.is_read) {
-            return {AddrResultType::complete_value, .value = fetch(cpu)};
-        } else {
-            assert(false);
-        }
+        return {AddrResultType::complete_value, .value = fetch(cpu)};
         break;
     case AddressingMode::absolute:
         if (cpu.instr_counter == 1) {
@@ -394,11 +514,7 @@ inline auto addr_mode(CPU &cpu) -> AddrResult {
     }
 }
 inline auto addr_mode_rmw(CPU &cpu) -> AddrResult {
-    assert(cpu.instr.type == InstructionType::asl);
     switch (cpu.instr.mode) {
-    case AddressingMode::accum:
-        assert(false);
-        break;
     case AddressingMode::absolute:
         switch (cpu.instr_counter) {
         case 1:
@@ -424,6 +540,18 @@ inline auto addr_mode_rmw(CPU &cpu) -> AddrResult {
         default:
             assert(false);
         }
+        break;
+    case AddressingMode::zero_page:
+        assert(false);
+        break;
+    case AddressingMode::zero_page_x:
+        assert(false);
+        break;
+    case AddressingMode::absolute_x:
+        assert(false);
+        break;
+    case AddressingMode::accum:
+        assert(false);
         break;
     default:
         assert(false);

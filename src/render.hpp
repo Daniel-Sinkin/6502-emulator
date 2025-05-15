@@ -46,14 +46,13 @@ inline auto cpu_register(mos6502::CPU &cpu) -> void {
         ImGui::TableSetColumnIndex(0);
         ImGui::Text("RDY  %s", cpu.rdy ? "true" : "false");
         ImGui::TableSetColumnIndex(1);
-        ImGui::Text("TMP  %d", cpu.tmp);
+        ImGui::Text("TMP  %02X", cpu.tmp);
         ImGui::EndTable();
     }
     ImGui::Text(
-        "%s %s (0x%02X) [%d]",
+        "%s %s [%d]",
         mos6502::to_string(cpu.instr.mode),
         mos6502::to_string(cpu.instr.type),
-        cpu.instr.opcode,
         cpu.instr_counter);
 }
 inline auto gui_debug() -> void {
