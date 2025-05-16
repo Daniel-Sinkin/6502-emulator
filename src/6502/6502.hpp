@@ -104,6 +104,21 @@ is_rmw_instruction(InstructionType t) -> bool {
     return std::ranges::contains(rmw_instructions, t);
 }
 
+[[nodiscard]] constexpr auto
+is_branching_instruction(InstructionType t) -> bool {
+    constexpr std::array branch_instructions = {
+        InstructionType::bcc, // Branch if Carry Clear
+        InstructionType::bcs, // Branch if Carry Set
+        InstructionType::beq, // Branch if Equal (Zero Set)
+        InstructionType::bne, // Branch if Not Equal (Zero Clear)
+        InstructionType::bmi, // Branch if Minus (Negative Set)
+        InstructionType::bpl, // Branch if Plus (Negative Clear)
+        InstructionType::bvc, // Branch if Overflow Clear
+        InstructionType::bvs  // Branch if Overflow Set
+    };
+    return std::ranges::contains(branch_instructions, t);
+}
+
 enum class AddressingMode {
     NONE,
     immediate,
@@ -162,12 +177,31 @@ enum class AddrResultType {
     complete,
     complete_value,
     complete_address,
-};
+
+}; // namespace mos6502
+
+[[nodiscard]] auto is_addr_result_complete(AddrResultType type) -> bool {
+    constexpr std::array<AddrResultType, 3> complete_types = {
+        AddrResultType::complete,
+        AddrResultType::complete_value,
+        AddrResultType::complete_address,
+    };
+    return std::ranges::contains(complete_types, type);
+}
 
 struct AddrResult {
     AddrResultType type = AddrResultType::load_instruction;
     optional<Byte> value = std::nullopt;
     optional<Address> addr = std::nullopt;
+
+    [[nodiscard]] auto is_complete() const -> bool {
+        constexpr std::array<AddrResultType, 3> complete_types = {
+            AddrResultType::complete,
+            AddrResultType::complete_value,
+            AddrResultType::complete_address,
+        };
+        return std::ranges::contains(complete_types, type);
+    }
 
     auto validate() const -> void {
         if (type == AddrResultType::load_instruction || type == AddrResultType::in_progress) {
@@ -230,6 +264,8 @@ struct CPU {
 
     AddrResult addr_result;
     Config config;
+
+    bool page_crossing_penalty = false;
 };
 
 constexpr Byte C_FLAG = 0b00000001; // Carry
@@ -264,6 +300,29 @@ inline auto set_flag_I(CPU &cpu, bool do_set) -> void {
         cpu.P |= I_FLAG;
     } else {
         cpu.P &= static_cast<Byte>(~I_FLAG);
+    }
+}
+
+inline auto check_branching_condition(CPU &cpu) -> bool {
+    switch (cpu.instr.type) {
+    case InstructionType::bcc: // Branch if Carry Clear
+        return ((cpu.P & C_FLAG) == 0);
+    case InstructionType::bcs: // Branch if Carry Set
+        return ((cpu.P & C_FLAG) != 0);
+    case InstructionType::beq: // Branch if Equal (Zero Set)
+        return ((cpu.P & Z_FLAG) != 0);
+    case InstructionType::bne: // Branch if Not Equal (Zero Clear)
+        return ((cpu.P & Z_FLAG) == 0);
+    case InstructionType::bmi: // Branch if Minus (Negative Set)
+        return ((cpu.P & N_FLAG) != 0);
+    case InstructionType::bpl: // Branch if Plus (Negative Clear)
+        return ((cpu.P & N_FLAG) == 0);
+    case InstructionType::bvc: // Branch if Overflow Clear
+        return ((cpu.P & V_FLAG) == 0);
+    case InstructionType::bvs: // Branch if Overflow Set
+        return ((cpu.P & V_FLAG) != 0);
+    default:
+        assert(false);
     }
 }
 
@@ -317,6 +376,8 @@ inline auto exec_func(CPU &cpu, optional<Byte> value, optional<Address> addr) ->
     if (cpu.instr.mode == AddressingMode::accum) {
         assert(!value.has_value() && !addr.has_value());
     }
+    assert(!is_branching_instruction(cpu.instr.type));
+
     switch (cpu.instr.type) {
     case InstructionType::adc:
         assert(false);
@@ -408,10 +469,24 @@ void initialize_instructions() {
     instructions[0x2D] = {InstructionType::and_, AddressingMode::absolute};
     instructions[0x3D] = {InstructionType::and_, AddressingMode::absolute_x};
 
+    instructions[0x90] = {InstructionType::bcc, AddressingMode::relative};
+
     instructions[0x4C] = {InstructionType::jmp, AddressingMode::absolute};
     instructions[0x6C] = {InstructionType::jmp, AddressingMode::indirect};
 
     instructions[0xA9] = {InstructionType::lda, AddressingMode::immediate};
+    instructions[0xA5] = {InstructionType::lda, AddressingMode::zero_page};
+    instructions[0xB5] = {InstructionType::lda, AddressingMode::zero_page_x};
+    instructions[0xAD] = {InstructionType::lda, AddressingMode::absolute};
+    instructions[0xBD] = {InstructionType::lda, AddressingMode::absolute_x};
+    instructions[0xB9] = {InstructionType::lda, AddressingMode::absolute_y};
+    instructions[0xB1] = {InstructionType::lda, AddressingMode::indirect_y};
+
+    instructions[0xA2] = {InstructionType::ldx, AddressingMode::immediate};
+    instructions[0xA6] = {InstructionType::ldx, AddressingMode::zero_page};
+    instructions[0xB6] = {InstructionType::ldx, AddressingMode::zero_page_y};
+    instructions[0xAE] = {InstructionType::ldx, AddressingMode::absolute};
+    instructions[0xBE] = {InstructionType::ldx, AddressingMode::absolute_y};
 
     instructions[0xA0] = {InstructionType::ldy, AddressingMode::immediate};
     instructions[0xA4] = {InstructionType::ldy, AddressingMode::zero_page};
@@ -457,7 +532,7 @@ void initialize_instructions() {
 inline auto addr_mode(CPU &cpu) -> AddrResult {
     if (cpu.instr_counter < 1) assert(false);
     switch (cpu.instr.mode) {
-    case AddressingMode::implied: // implied
+    case AddressingMode::implied:
         assert(cpu.instr_counter == 1);
         return {AddrResultType::complete};
     case AddressingMode::zero_page: // operand is zeropage address (hi-byte is zero, address = $00LL)
@@ -478,6 +553,21 @@ inline auto addr_mode(CPU &cpu) -> AddrResult {
             assert(false);
         }
         break;
+    case AddressingMode::relative: // Branching instructions
+        assert(cpu.instr_counter <= 2);
+        if (cpu.instr_counter == 1) {
+            fetch_to_tmp(cpu);
+            cpu.temporary_address_register = static_cast<Address>((cpu.PC + cpu.tmp) - 128);
+            bool page_crossed = (cpu.temporary_address_register & 0xFF00) == (cpu.PC & 0xFF00);
+            if (page_crossed) {
+                cpu.page_crossing_penalty = true;
+                return {AddrResultType::in_progress};
+            } else {
+                return {AddrResultType::complete_address, .addr = cpu.temporary_address_register};
+            }
+        } else if (cpu.instr_counter == 2) {
+            return {AddrResultType::complete_address, .addr = cpu.temporary_address_register};
+        }
     case AddressingMode::indirect:
         switch (cpu.instr_counter) {
         case 1:
@@ -558,8 +648,14 @@ inline auto addr_mode_rmw(CPU &cpu) -> AddrResult {
     }
 }
 
+inline auto finished_instruction(CPU &cpu) -> void {
+    cpu.addr_result = {AddrResultType::load_instruction};
+    cpu.instr_counter = 0;
+}
+
 inline auto tick(CPU &cpu) -> void {
     cpu.addr_result.validate();
+
     if (cpu.addr_result.type == AddrResultType::load_instruction) {
         // Fetch instruction
         Byte opcode = fetch(cpu);
@@ -577,10 +673,12 @@ inline auto tick(CPU &cpu) -> void {
     }
     cpu.addr_result.validate();
     ++cpu.instr_counter;
-    if (cpu.addr_result.type != AddrResultType::in_progress) {
+
+    if (cpu.addr_result.is_complete()) {
         exec_func(cpu, cpu.addr_result.value, cpu.addr_result.addr);
-        cpu.addr_result = {AddrResultType::load_instruction};
-        cpu.instr_counter = 0;
+        if (!cpu.page_crossing_penalty) {
+            finished_instruction(cpu);
+        }
     }
     ++cpu.cycles;
 }
