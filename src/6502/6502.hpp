@@ -457,76 +457,178 @@ inline auto exec_func(CPU &cpu, optional<Byte> value, optional<Address> addr) ->
 
 std::array<Instruction, 256> instructions{};
 void initialize_instructions() {
-    instructions[0x00] = {InstructionType::brk, AddressingMode::implied};
-    instructions[0x0E] = {InstructionType::asl, AddressingMode::absolute};
+    /* 1.  Set every slot to “no instruction” ------------------------ */
+    instructions.fill({InstructionType::NONE, AddressingMode::NONE});
 
+    /* 2.  Official 6510/6502 instruction set (151 opcodes) ---------- */
+
+    /* $00-$1F -------------------------------------------------------- */
+    instructions[0x00] = {InstructionType::brk, AddressingMode::implied};
+    instructions[0x01] = {InstructionType::ora, AddressingMode::indirect_x};
+    instructions[0x05] = {InstructionType::ora, AddressingMode::zero_page};
+    instructions[0x06] = {InstructionType::asl, AddressingMode::zero_page};
+    instructions[0x08] = {InstructionType::php, AddressingMode::implied};
+    instructions[0x09] = {InstructionType::ora, AddressingMode::immediate};
+    instructions[0x0A] = {InstructionType::asl, AddressingMode::accum};
+    instructions[0x0D] = {InstructionType::ora, AddressingMode::absolute};
+    instructions[0x0E] = {InstructionType::asl, AddressingMode::absolute};
+    instructions[0x10] = {InstructionType::bpl, AddressingMode::relative};
+    instructions[0x11] = {InstructionType::ora, AddressingMode::indirect_y};
+    instructions[0x15] = {InstructionType::ora, AddressingMode::zero_page_x};
+    instructions[0x16] = {InstructionType::asl, AddressingMode::zero_page_x};
+    instructions[0x18] = {InstructionType::clc, AddressingMode::implied};
+    instructions[0x19] = {InstructionType::ora, AddressingMode::absolute_y};
+    instructions[0x1D] = {InstructionType::ora, AddressingMode::absolute_x};
+    instructions[0x1E] = {InstructionType::asl, AddressingMode::absolute_x};
+
+    /* $20-$3F -------------------------------------------------------- */
+    instructions[0x20] = {InstructionType::jsr, AddressingMode::absolute};
     instructions[0x21] = {InstructionType::and_, AddressingMode::indirect_x};
+    instructions[0x24] = {InstructionType::bit, AddressingMode::zero_page};
     instructions[0x25] = {InstructionType::and_, AddressingMode::zero_page};
+    instructions[0x26] = {InstructionType::rol, AddressingMode::zero_page};
+    instructions[0x28] = {InstructionType::plp, AddressingMode::implied};
     instructions[0x29] = {InstructionType::and_, AddressingMode::immediate};
+    instructions[0x2A] = {InstructionType::rol, AddressingMode::accum};
+    instructions[0x2C] = {InstructionType::bit, AddressingMode::absolute};
+    instructions[0x2D] = {InstructionType::and_, AddressingMode::absolute};
+    instructions[0x2E] = {InstructionType::rol, AddressingMode::absolute};
+    instructions[0x30] = {InstructionType::bmi, AddressingMode::relative};
     instructions[0x31] = {InstructionType::and_, AddressingMode::indirect_y};
     instructions[0x35] = {InstructionType::and_, AddressingMode::zero_page_x};
-    instructions[0x39] = {InstructionType::and_, AddressingMode::absolute_y};
-    instructions[0x2D] = {InstructionType::and_, AddressingMode::absolute};
-    instructions[0x3D] = {InstructionType::and_, AddressingMode::absolute_x};
-
-    instructions[0x90] = {InstructionType::bcc, AddressingMode::relative};
-
-    instructions[0x4C] = {InstructionType::jmp, AddressingMode::absolute};
-    instructions[0x6C] = {InstructionType::jmp, AddressingMode::indirect};
-
-    instructions[0xA9] = {InstructionType::lda, AddressingMode::immediate};
-    instructions[0xA5] = {InstructionType::lda, AddressingMode::zero_page};
-    instructions[0xB5] = {InstructionType::lda, AddressingMode::zero_page_x};
-    instructions[0xAD] = {InstructionType::lda, AddressingMode::absolute};
-    instructions[0xBD] = {InstructionType::lda, AddressingMode::absolute_x};
-    instructions[0xB9] = {InstructionType::lda, AddressingMode::absolute_y};
-    instructions[0xB1] = {InstructionType::lda, AddressingMode::indirect_y};
-
-    instructions[0xA2] = {InstructionType::ldx, AddressingMode::immediate};
-    instructions[0xA6] = {InstructionType::ldx, AddressingMode::zero_page};
-    instructions[0xB6] = {InstructionType::ldx, AddressingMode::zero_page_y};
-    instructions[0xAE] = {InstructionType::ldx, AddressingMode::absolute};
-    instructions[0xBE] = {InstructionType::ldx, AddressingMode::absolute_y};
-
-    instructions[0xA0] = {InstructionType::ldy, AddressingMode::immediate};
-    instructions[0xA4] = {InstructionType::ldy, AddressingMode::zero_page};
-    instructions[0xB9] = {InstructionType::ldy, AddressingMode::zero_page_x};
-    instructions[0xAC] = {InstructionType::ldy, AddressingMode::absolute};
-    instructions[0xBC] = {InstructionType::ldy, AddressingMode::absolute_x};
-
-    instructions[0xBC] = {InstructionType::nop, AddressingMode::implied};
-
+    instructions[0x36] = {InstructionType::rol, AddressingMode::zero_page_x};
     instructions[0x38] = {InstructionType::sec, AddressingMode::implied};
+    instructions[0x39] = {InstructionType::and_, AddressingMode::absolute_y};
+    instructions[0x3D] = {InstructionType::and_, AddressingMode::absolute_x};
+    instructions[0x3E] = {InstructionType::rol, AddressingMode::absolute_x};
 
+    /* $40-$5F -------------------------------------------------------- */
+    instructions[0x40] = {InstructionType::rti, AddressingMode::implied};
+    instructions[0x41] = {InstructionType::eor, AddressingMode::indirect_x};
+    instructions[0x45] = {InstructionType::eor, AddressingMode::zero_page};
+    instructions[0x46] = {InstructionType::lsr, AddressingMode::zero_page};
+    instructions[0x48] = {InstructionType::pha, AddressingMode::implied};
+    instructions[0x49] = {InstructionType::eor, AddressingMode::immediate};
+    instructions[0x4A] = {InstructionType::lsr, AddressingMode::accum};
+    instructions[0x4C] = {InstructionType::jmp, AddressingMode::absolute};
+    instructions[0x4D] = {InstructionType::eor, AddressingMode::absolute};
+    instructions[0x4E] = {InstructionType::lsr, AddressingMode::absolute};
+    instructions[0x50] = {InstructionType::bvc, AddressingMode::relative};
+    instructions[0x51] = {InstructionType::eor, AddressingMode::indirect_y};
+    instructions[0x55] = {InstructionType::eor, AddressingMode::zero_page_x};
+    instructions[0x56] = {InstructionType::lsr, AddressingMode::zero_page_x};
+    instructions[0x58] = {InstructionType::cli, AddressingMode::implied};
+    instructions[0x59] = {InstructionType::eor, AddressingMode::absolute_y};
+    instructions[0x5D] = {InstructionType::eor, AddressingMode::absolute_x};
+    instructions[0x5E] = {InstructionType::lsr, AddressingMode::absolute_x};
+
+    /* $60-$7F -------------------------------------------------------- */
+    instructions[0x60] = {InstructionType::rts, AddressingMode::implied};
+    instructions[0x61] = {InstructionType::adc, AddressingMode::indirect_x};
+    instructions[0x65] = {InstructionType::adc, AddressingMode::zero_page};
+    instructions[0x66] = {InstructionType::ror, AddressingMode::zero_page};
+    instructions[0x68] = {InstructionType::pla, AddressingMode::implied};
+    instructions[0x69] = {InstructionType::adc, AddressingMode::immediate};
+    instructions[0x6A] = {InstructionType::ror, AddressingMode::accum};
+    instructions[0x6C] = {InstructionType::jmp, AddressingMode::indirect};
+    instructions[0x6D] = {InstructionType::adc, AddressingMode::absolute};
+    instructions[0x6E] = {InstructionType::ror, AddressingMode::absolute};
+    instructions[0x70] = {InstructionType::bvs, AddressingMode::relative};
+    instructions[0x71] = {InstructionType::adc, AddressingMode::indirect_y};
+    instructions[0x75] = {InstructionType::adc, AddressingMode::zero_page_x};
+    instructions[0x76] = {InstructionType::ror, AddressingMode::zero_page_x};
     instructions[0x78] = {InstructionType::sei, AddressingMode::implied};
+    instructions[0x79] = {InstructionType::adc, AddressingMode::absolute_y};
+    instructions[0x7D] = {InstructionType::adc, AddressingMode::absolute_x};
+    instructions[0x7E] = {InstructionType::ror, AddressingMode::absolute_x};
 
+    /* $80-$9F -------------------------------------------------------- */
     instructions[0x81] = {InstructionType::sta, AddressingMode::indirect_x};
+    instructions[0x84] = {InstructionType::sty, AddressingMode::zero_page};
     instructions[0x85] = {InstructionType::sta, AddressingMode::zero_page};
+    instructions[0x86] = {InstructionType::stx, AddressingMode::zero_page};
+    instructions[0x88] = {InstructionType::dey, AddressingMode::implied};
+    instructions[0x8A] = {InstructionType::txa, AddressingMode::implied};
+    instructions[0x8C] = {InstructionType::sty, AddressingMode::absolute};
     instructions[0x8D] = {InstructionType::sta, AddressingMode::absolute};
+    instructions[0x8E] = {InstructionType::stx, AddressingMode::absolute};
+    instructions[0x90] = {InstructionType::bcc, AddressingMode::relative};
     instructions[0x91] = {InstructionType::sta, AddressingMode::indirect_y};
+    instructions[0x94] = {InstructionType::sty, AddressingMode::zero_page_x};
     instructions[0x95] = {InstructionType::sta, AddressingMode::zero_page_x};
+    instructions[0x96] = {InstructionType::stx, AddressingMode::zero_page_y};
+    instructions[0x98] = {InstructionType::tya, AddressingMode::implied};
     instructions[0x99] = {InstructionType::sta, AddressingMode::absolute_y};
+    instructions[0x9A] = {InstructionType::txs, AddressingMode::implied};
     instructions[0x9D] = {InstructionType::sta, AddressingMode::absolute_x};
 
-    instructions[0x86] = {InstructionType::stx, AddressingMode::zero_page};
-    instructions[0x96] = {InstructionType::stx, AddressingMode::zero_page_y};
-    instructions[0x8E] = {InstructionType::stx, AddressingMode::absolute};
-
-    instructions[0x84] = {InstructionType::sty, AddressingMode::zero_page};
-    instructions[0x94] = {InstructionType::sty, AddressingMode::zero_page_x};
-    instructions[0x8C] = {InstructionType::sty, AddressingMode::absolute};
-
-    instructions[0xAA] = {InstructionType::tax, AddressingMode::implied};
-
+    /* $A0-$BF -------------------------------------------------------- */
+    instructions[0xA0] = {InstructionType::ldy, AddressingMode::immediate};
+    instructions[0xA1] = {InstructionType::lda, AddressingMode::indirect_x};
+    instructions[0xA2] = {InstructionType::ldx, AddressingMode::immediate};
+    instructions[0xA4] = {InstructionType::ldy, AddressingMode::zero_page};
+    instructions[0xA5] = {InstructionType::lda, AddressingMode::zero_page};
+    instructions[0xA6] = {InstructionType::ldx, AddressingMode::zero_page};
     instructions[0xA8] = {InstructionType::tay, AddressingMode::implied};
+    instructions[0xA9] = {InstructionType::lda, AddressingMode::immediate};
+    instructions[0xAA] = {InstructionType::tax, AddressingMode::implied};
+    instructions[0xAC] = {InstructionType::ldy, AddressingMode::absolute};
+    instructions[0xAD] = {InstructionType::lda, AddressingMode::absolute};
+    instructions[0xAE] = {InstructionType::ldx, AddressingMode::absolute};
 
+    instructions[0xB0] = {InstructionType::bcs, AddressingMode::relative};
+    instructions[0xB1] = {InstructionType::lda, AddressingMode::indirect_y};
+    instructions[0xB4] = {InstructionType::ldy, AddressingMode::zero_page_x};
+    instructions[0xB5] = {InstructionType::lda, AddressingMode::zero_page_x};
+    instructions[0xB6] = {InstructionType::ldx, AddressingMode::zero_page_y};
+    instructions[0xB8] = {InstructionType::clv, AddressingMode::implied};
+    instructions[0xB9] = {InstructionType::lda, AddressingMode::absolute_y};
     instructions[0xBA] = {InstructionType::tsx, AddressingMode::implied};
+    instructions[0xBC] = {InstructionType::ldy, AddressingMode::absolute_x};
+    instructions[0xBD] = {InstructionType::lda, AddressingMode::absolute_x};
+    instructions[0xBE] = {InstructionType::ldx, AddressingMode::absolute_y};
 
-    instructions[0x8A] = {InstructionType::txa, AddressingMode::implied};
+    /* $C0-$DF -------------------------------------------------------- */
+    instructions[0xC0] = {InstructionType::cpy, AddressingMode::immediate};
+    instructions[0xC1] = {InstructionType::cmp, AddressingMode::indirect_x};
+    instructions[0xC4] = {InstructionType::cpy, AddressingMode::zero_page};
+    instructions[0xC5] = {InstructionType::cmp, AddressingMode::zero_page};
+    instructions[0xC6] = {InstructionType::dec, AddressingMode::zero_page};
+    instructions[0xC8] = {InstructionType::iny, AddressingMode::implied};
+    instructions[0xC9] = {InstructionType::cmp, AddressingMode::immediate};
+    instructions[0xCA] = {InstructionType::dex, AddressingMode::implied};
+    instructions[0xCC] = {InstructionType::cpy, AddressingMode::absolute};
+    instructions[0xCD] = {InstructionType::cmp, AddressingMode::absolute};
+    instructions[0xCE] = {InstructionType::dec, AddressingMode::absolute};
+    instructions[0xD0] = {InstructionType::bne, AddressingMode::relative};
+    instructions[0xD1] = {InstructionType::cmp, AddressingMode::indirect_y};
+    instructions[0xD5] = {InstructionType::cmp, AddressingMode::zero_page_x};
+    instructions[0xD6] = {InstructionType::dec, AddressingMode::zero_page_x};
+    instructions[0xD8] = {InstructionType::cld, AddressingMode::implied};
+    instructions[0xD9] = {InstructionType::cmp, AddressingMode::absolute_y};
+    instructions[0xDD] = {InstructionType::cmp, AddressingMode::absolute_x};
+    instructions[0xDE] = {InstructionType::dec, AddressingMode::absolute_x};
 
-    instructions[0x9A] = {InstructionType::txs, AddressingMode::implied};
-
-    instructions[0x98] = {InstructionType::tya, AddressingMode::implied};
+    /* $E0-$FF -------------------------------------------------------- */
+    instructions[0xE0] = {InstructionType::cpx, AddressingMode::immediate};
+    instructions[0xE1] = {InstructionType::sbc, AddressingMode::indirect_x};
+    instructions[0xE4] = {InstructionType::cpx, AddressingMode::zero_page};
+    instructions[0xE5] = {InstructionType::sbc, AddressingMode::zero_page};
+    instructions[0xE6] = {InstructionType::inc, AddressingMode::zero_page};
+    instructions[0xE8] = {InstructionType::inx, AddressingMode::implied};
+    instructions[0xE9] = {InstructionType::sbc, AddressingMode::immediate};
+    instructions[0xEA] = {InstructionType::nop, AddressingMode::implied};
+    instructions[0xEC] = {InstructionType::cpx, AddressingMode::absolute};
+    instructions[0xED] = {InstructionType::sbc, AddressingMode::absolute};
+    instructions[0xEE] = {InstructionType::inc, AddressingMode::absolute};
+    instructions[0xF0] = {InstructionType::beq, AddressingMode::relative};
+    instructions[0xF1] = {InstructionType::sbc, AddressingMode::indirect_y};
+    instructions[0xF5] = {InstructionType::sbc, AddressingMode::zero_page_x};
+    instructions[0xF6] = {InstructionType::inc, AddressingMode::zero_page_x};
+    instructions[0xF8] = {InstructionType::sed, AddressingMode::implied};
+    instructions[0xF9] = {InstructionType::sbc, AddressingMode::absolute_y};
+    instructions[0xFD] = {InstructionType::sbc, AddressingMode::absolute_x};
+    instructions[0xFE] = {InstructionType::inc, AddressingMode::absolute_x};
 }
 
 inline auto addr_mode(CPU &cpu) -> AddrResult {
@@ -553,7 +655,7 @@ inline auto addr_mode(CPU &cpu) -> AddrResult {
             assert(false);
         }
         break;
-    case AddressingMode::relative: // Branching instructions
+    case AddressingMode::relative:
         assert(cpu.instr_counter <= 2);
         if (cpu.instr_counter == 1) {
             fetch_to_tmp(cpu);
@@ -567,6 +669,8 @@ inline auto addr_mode(CPU &cpu) -> AddrResult {
             }
         } else if (cpu.instr_counter == 2) {
             return {AddrResultType::complete_address, .addr = cpu.temporary_address_register};
+        } else {
+            assert(false);
         }
     case AddressingMode::indirect:
         switch (cpu.instr_counter) {
