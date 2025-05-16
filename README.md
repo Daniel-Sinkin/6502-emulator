@@ -8,7 +8,7 @@
   * [Basics - 6502 Assembly Crash Course 01](https://www.youtube.com/watch?v=yEiNs7pKNh8)
   * [The first LowSpec Processor](https://www.youtube.com/watch?v=lP2ZBp9O0mk)
   * [The 6502 CPU Powered a Whole Generation!](https://www.youtube.com/watch?v=acUH4lWe2NQ)
- 
+  * [“Hello, world” from scratch on a 6502 — Part 1](https://www.youtube.com/watch?v=LnzuMJLZRdU)
 # Credits
 Font: Monaspace Krypton
 License: SIL Open Font License 1.1
