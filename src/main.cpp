@@ -32,6 +32,7 @@ using namespace std::chrono_literals;
 #include "utils.hpp"
 
 #include "6502/6502.hpp"
+#include "6502/program_writer.hpp"
 
 auto load_example_simple() -> void {
     auto pw = mos6502::ProgramWriter(global.cpu);
@@ -61,17 +62,11 @@ auto main() -> int {
     println("Engine setup complete");
 
     mos6502::initialize_instructions();
-    global.cpu = mos6502::CPU();
-
-    // load_example_simple();
-    auto pw = mos6502::ProgramWriter(global.cpu);
-    pw.lda_immediate();
-    pw(0xFF);
-    pw.and_immediate();
-    pw(0x01);
-    pw.jmp_absolute();
-    pw(0x04);
-    pw(0x00);
+    // global.cpu = mos6502::CPU();
+    load_example_simple();
+    // auto pw = mos6502::ProgramWriter(global.cpu);
+    // pw.bne();
+    // pw(0x05);
 
     global.debug_activate();
 

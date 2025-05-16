@@ -264,8 +264,6 @@ struct CPU {
 
     AddrResult addr_result;
     Config config;
-
-    bool page_crossing_penalty = false;
 };
 
 constexpr Byte C_FLAG = 0b00000001; // Carry
@@ -343,40 +341,10 @@ auto fetch_to_tar(CPU &cpu) -> void {
 }
 auto write(CPU &cpu, Address addr, Byte val) -> void { cpu.mem[addr] = val; }
 
-class ProgramWriter {
-public:
-    Address addr;
-
-    ProgramWriter(CPU &cpu, Address addr = 0x0000)
-        : addr(addr), cpu(cpu) {}
-
-    void operator()(Byte value) {
-        cpu.mem[addr++] = value;
-    }
-
-    void lda_immediate() { (*this)(0xA9); }
-    void jmp_absolute() { (*this)(0x4C); }
-    void jmp_indirect() { (*this)(0x6C); }
-    void asl_absolute() { (*this)(0x0E); }
-
-    void and_zeropage() { (*this)(0x25); }
-    void and_immediate() { (*this)(0x29); }
-    void and_zeropage_x() { (*this)(0x35); }
-    void and_absolute() { (*this)(0x2D); }
-    void and_absolute_x() { (*this)(0x3D); }
-    void and_absolute_y() { (*this)(0x39); }
-    void and_indirect_x() { (*this)(0x21); }
-    void and_indirect_y() { (*this)(0x31); }
-
-private:
-    CPU &cpu;
-};
-
 inline auto exec_func(CPU &cpu, optional<Byte> value, optional<Address> addr) -> void {
     if (cpu.instr.mode == AddressingMode::accum) {
         assert(!value.has_value() && !addr.has_value());
     }
-    assert(!is_branching_instruction(cpu.instr.type));
 
     switch (cpu.instr.type) {
     case InstructionType::adc:
@@ -656,22 +624,7 @@ inline auto addr_mode(CPU &cpu) -> AddrResult {
         }
         break;
     case AddressingMode::relative:
-        assert(cpu.instr_counter <= 2);
-        if (cpu.instr_counter == 1) {
-            fetch_to_tmp(cpu);
-            cpu.temporary_address_register = static_cast<Address>((cpu.PC + cpu.tmp) - 128);
-            bool page_crossed = (cpu.temporary_address_register & 0xFF00) == (cpu.PC & 0xFF00);
-            if (page_crossed) {
-                cpu.page_crossing_penalty = true;
-                return {AddrResultType::in_progress};
-            } else {
-                return {AddrResultType::complete_address, .addr = cpu.temporary_address_register};
-            }
-        } else if (cpu.instr_counter == 2) {
-            return {AddrResultType::complete_address, .addr = cpu.temporary_address_register};
-        } else {
-            assert(false);
-        }
+        assert(false); // Should be handeled seperately
     case AddressingMode::indirect:
         switch (cpu.instr_counter) {
         case 1:
@@ -757,16 +710,54 @@ inline auto finished_instruction(CPU &cpu) -> void {
     cpu.instr_counter = 0;
 }
 
-inline auto tick(CPU &cpu) -> void {
-    cpu.addr_result.validate();
+inline auto handle_branching_instruction(CPU &cpu) -> void {
+    switch (cpu.instr_counter) {
+    case 1:
+        fetch_to_tmp(cpu);
+        if (!check_branching_condition(cpu)) {
+            finished_instruction(cpu);
+            return;
+        }
+        cpu.addr_result = {AddrResultType::in_progress};
+        ++cpu.instr_counter;
+        break;
+    case 2: {
+        cpu.temporary_address_register = static_cast<Address>(cpu.PC + static_cast<int8_t>(cpu.tmp));
+        bool same_page = (cpu.temporary_address_register & 0xFF00) == (cpu.PC & 0xFF00);
+        if (same_page) {
+            cpu.PC = cpu.temporary_address_register;
+            finished_instruction(cpu);
+        } else {
+            cpu.addr_result = {AddrResultType::in_progress};
+            ++cpu.instr_counter;
+        }
+        break;
+    }
+    case 3:
+        cpu.PC = cpu.temporary_address_register;
+        finished_instruction(cpu);
+        break;
+    default:
+        assert(false);
+        break;
+    }
+}
 
+inline auto tick(CPU &cpu) -> void {
+    ++cpu.cycles;
+    cpu.addr_result.validate();
     if (cpu.addr_result.type == AddrResultType::load_instruction) {
+        assert(cpu.instr_counter == 0);
         // Fetch instruction
         Byte opcode = fetch(cpu);
         cpu.instr = instructions[opcode];
         cpu.instr_counter = 1;
         cpu.addr_result = {AddrResultType::in_progress};
-        ++cpu.cycles;
+        return;
+    }
+
+    if (is_branching_instruction(cpu.instr.type)) {
+        handle_branching_instruction(cpu);
         return;
     }
 
@@ -780,10 +771,8 @@ inline auto tick(CPU &cpu) -> void {
 
     if (cpu.addr_result.is_complete()) {
         exec_func(cpu, cpu.addr_result.value, cpu.addr_result.addr);
-        if (!cpu.page_crossing_penalty) {
-            finished_instruction(cpu);
-        }
+        finished_instruction(cpu);
+        return;
     }
-    ++cpu.cycles;
 }
 } // namespace mos6502
