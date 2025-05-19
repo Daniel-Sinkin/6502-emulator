@@ -11,6 +11,7 @@
   * [“Hello, world” from scratch on a 6502 — Part 1](https://www.youtube.com/watch?v=LnzuMJLZRdU)
   * [Software Emulators vs FPGAs](https://www.youtube.com/watch?v=sMMiBEhnizE)
   * [Advanced 6502 Assembly Programming for the Apple II](https://www.youtube.com/watch?v=WEliEAc3ZyA)
+  * [27c3: Reverse Engineering the MOS 6502 CPU (en)](https://www.youtube.com/watch?v=fWqBmmPQP40)
 # Credits
 Font: Monaspace Krypton
 License: SIL Open Font License 1.1
