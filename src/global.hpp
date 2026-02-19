@@ -1,13 +1,13 @@
 #pragma once
 
 #include <cassert>
-#include <stack>
 
 #include <SDL.h>
 #include <chrono>
 #include <imgui.h>
 
 #include "6502/6502.hpp"
+#include "6502/history.hpp"
 #include "constants.hpp"
 #include "gl.hpp"
 #include "types.hpp"
@@ -47,9 +47,12 @@ struct SimulationState {
     bool is_debugging = false;
     bool step_once = false;
     bool step_back = false;
+    bool step_forward = false;
 
     auto validate() -> void {
         if (step_once && !is_debugging) assert(false);
+        if (step_back && !is_debugging) assert(false);
+        if (step_forward && !is_debugging) assert(false);
     }
 };
 
@@ -72,7 +75,7 @@ struct Global {
     ColorPalette color;
     mos6502::CPU cpu;
 
-    std::stack<mos6502::CPUSnapshot> cpu_snapshots;
+    mos6502::StepHistory cpu_history{mos6502::history_default_capacity};
 
     auto validate() -> void {
         sim.validate();
@@ -82,9 +85,10 @@ struct Global {
         color.background = CONSTANTS::COLOR::background_debug;
     }
     auto debug_deactivate() -> void {
-        sim.is_debugging = true;
+        sim.is_debugging = false;
         sim.step_once = false;
         sim.step_back = false;
+        sim.step_forward = false;
         color.background = CONSTANTS::COLOR::background;
     }
 };

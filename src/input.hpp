@@ -26,9 +26,9 @@ inline auto handle_event(const SDL_Event &event) -> void {
             if (global.sim.is_debugging) {
                 global.sim.step_once = false;
                 global.sim.step_back = false;
+                global.sim.step_forward = false;
                 global.sim.is_debugging = false;
-                // Flush the snapshot buffer
-                std::stack<mos6502::CPUSnapshot>().swap(global.cpu_snapshots);
+                global.cpu_history.clear();
             } else {
                 global.sim.is_debugging = true;
             }
@@ -40,6 +40,7 @@ inline auto handle_event(const SDL_Event &event) -> void {
             global.sim.is_debugging = true;
             global.sim.step_once = true;
             global.sim.step_back = false;
+            global.sim.step_forward = false;
             global.color.background = CONSTANTS::COLOR::background_debug;
             break;
 
@@ -47,7 +48,26 @@ inline auto handle_event(const SDL_Event &event) -> void {
             global.sim.is_debugging = true;
             global.sim.step_once = false;
             global.sim.step_back = true;
+            global.sim.step_forward = false;
             global.color.background = CONSTANTS::COLOR::background_debug;
+            break;
+
+        case SDLK_f:
+            global.sim.is_debugging = true;
+            global.sim.step_once = false;
+            global.sim.step_back = false;
+            global.sim.step_forward = true;
+            global.color.background = CONSTANTS::COLOR::background_debug;
+            break;
+
+        case SDLK_i:
+            global.cpu.irq = !global.cpu.irq;
+            println("IRQ line %s", global.cpu.irq ? "asserted" : "cleared");
+            break;
+
+        case SDLK_m:
+            global.cpu.nmi = true;
+            println("NMI pulse requested");
             break;
 
         case SDLK_ESCAPE:

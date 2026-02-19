@@ -1,11 +1,26 @@
 cmake_minimum_required(VERSION 3.16)
 project(main LANGUAGES CXX)
 
+# CMake 4.x requires older subprojects to declare a minimum policy version.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
+
+option(ENABLE_PCH "Enable precompiled headers for C++ targets" ON)
+set(PROJECT_PCH_HEADER "${CMAKE_SOURCE_DIR}/src/pch.hpp")
+
+function(enable_project_pch target_name)
+    if(ENABLE_PCH)
+        target_precompile_headers(${target_name}
+            PRIVATE
+                "$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_PCH_HEADER}>"
+        )
+    endif()
+endfunction()
 
 include(FetchContent)
 
@@ -16,6 +31,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/Dav1dde/glad.git
     GIT_TAG v0.1.36
 )
+set(GLAD_REPRODUCIBLE ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glad)
 
 # ---------------------------------------
@@ -76,6 +92,7 @@ add_executable(main)
 # 2) Gather only your own .cpp files
 file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.cpp")
 target_sources(main PRIVATE ${SRC_SOURCES})
+enable_project_pch(main)
 
 # 3) Mark SDL’s headers as SYSTEM so their warnings stay silent
 target_include_directories(main SYSTEM PRIVATE ${SDL2_INCLUDE_DIRS})
@@ -150,6 +167,7 @@ add_library(imgui_impl STATIC
     ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
+enable_project_pch(imgui_impl)
 target_include_directories(imgui_impl SYSTEM PRIVATE
     ${imgui_SOURCE_DIR}
     ${imgui_SOURCE_DIR}/backends
@@ -157,3 +175,28 @@ target_include_directories(imgui_impl SYSTEM PRIVATE
 )
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+enable_testing()
+
+add_executable(cpu_tests tests/cpu_tests.cpp)
+enable_project_pch(cpu_tests)
+target_include_directories(cpu_tests PRIVATE
+    ${CMAKE_SOURCE_DIR}
+)
+target_compile_options(cpu_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Werror
+    -Wshadow -Wnon-virtual-dtor
+    -Wold-style-cast -Wcast-align
+    -Wconversion -Wsign-conversion
+    -Wnull-dereference -Wdouble-promotion
+    -Wstrict-overflow=5 -Wformat=2
+    -Woverloaded-virtual -Wundef
+    -Wfloat-equal -Wzero-as-null-pointer-constant
+    -Wmissing-declarations -Wimplicit-fallthrough
+    -Wunreachable-code -ftrapv
+)
+target_link_libraries(cpu_tests PRIVATE
+    glm::glm
+    nlohmann_json::nlohmann_json
+)
+add_test(NAME cpu_tests COMMAND cpu_tests)
