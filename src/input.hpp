@@ -2,6 +2,7 @@
 #pragma once
 
 #include "constants.hpp"
+#include "demo.hpp"
 #include "types.hpp"
 #include "utils.hpp"
 
@@ -34,6 +35,36 @@ inline auto handle_event(const SDL_Event &event) -> void {
             }
             // apply the correct background right when we toggle
             global.color.background = (global.sim.is_debugging ? CONSTANTS::COLOR::background_debug : CONSTANTS::COLOR::background);
+            break;
+
+        case SDLK_UP:
+        case SDLK_w:
+            DEMO::request_snake_direction(0, -1);
+            break;
+
+        case SDLK_RIGHT:
+        case SDLK_d:
+            DEMO::request_snake_direction(1, 0);
+            break;
+
+        case SDLK_DOWN:
+        case SDLK_s:
+            DEMO::request_snake_direction(0, 1);
+            break;
+
+        case SDLK_LEFT:
+        case SDLK_a:
+            DEMO::request_snake_direction(-1, 0);
+            break;
+
+        case SDLK_r:
+            if (DEMO::active_mode() == DEMO::Mode::snake) {
+                DEMO::reset_snake();
+                println("Snake demo reset");
+            } else {
+                DEMO::reset_active_mode();
+                println("Pattern demo reset");
+            }
             break;
 
         case SDLK_n:

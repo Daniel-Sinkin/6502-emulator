@@ -7,10 +7,13 @@ OpenGL + SDL2 + Dear ImGui MOS 6502 emulator/debugger.
 - Instruction families: implemented in `exec_func` (`src/6502/6502.hpp`).
 - Addressing modes: implemented (`immediate`, `zero_page*`, `absolute*`, `indirect*`, `relative`, `accum`, `implied`).
 - Debug UI: register view, memory windows, framebuffer view, disassembly with inline comments, and an `Instruction Explain` panel with 3-4 human-readable lines using live register/memory values.
+- Portfolio dashboard: in-app KPI bars + support matrix with `% support` and hardware-closeness scoring.
+- Interactive showcase modes: pure-6502 framebuffer pattern + keyboard-driven snake using memory-mapped I/O bytes.
 
 ## Known limitations
 - Timing is not cycle-accurate yet.
 - Interrupt handling is instruction-boundary accurate (`IRQ`/`NMI` vectors + stack/status push), but not cycle-accurate bus timing.
+- Unofficial/undocumented opcodes are intentionally not implemented.
 
 ## Build requirements
 - CMake 3.16+
@@ -51,15 +54,28 @@ The BSD-3-Clause notice is included at `tests/third_party/py65.LICENSE`.
 - `F`: step forward (redo)
 - `I`: toggle IRQ line
 - `M`: pulse NMI
+- `Arrow keys` / `WASD`: snake direction (when snake demo is active)
+- `R`: reset active demo (snake restart or pattern reset)
 - `ESC`: quit
 
 Debug stepping keeps a fixed-capacity timeline (`240` steps by default) and stores RAM changes as block deltas (`256`-byte blocks) instead of full 64KB snapshots per step.
 
-## Included runnable demo
-`src/main.cpp` loads a framebuffer demo program at `$0600` that:
+## Included runnable demos
+Use the ImGui window `Portfolio Dashboard` to switch between demos:
+
+1. `Pattern Program (pure 6502)`:
+- Loads a generated 6502 program at `$0600`
 - Treats `$0200-$05FF` as a 32x32 pixel buffer
-- Continuously fills it with an animated color pattern using only 6502 instructions
-- Renders that memory as a color screen in the ImGui window `Framebuffer (0x0200-0x05FF)`
+- Continuously fills it with an animated pattern using only 6502 instructions
+
+2. `Snake (framebuffer + host I/O)`:
+- Renders to the same `$0200-$05FF` framebuffer window
+- Accepts direction input from keyboard (`Arrow keys` / `WASD`)
+- Exposes input/game telemetry bytes for memory-map storytelling:
+  - `$00F0`: direction
+  - `$00F1`: snake tick counter
+  - `$00F2`: score
+  - `$00F3`: game-over flag
 
 ## References
 - [Datasheet](https://web.archive.org/web/20221029042234if_/http://archive.6502.org/datasheets/mos_6500_mpu_preliminary_may_1976.pdf)

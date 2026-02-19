@@ -24,77 +24,7 @@
 #include "utils.hpp"
 
 #include "6502/6502.hpp"
-#include "6502/program_writer.hpp"
-
-auto load_example_framebuffer_demo() -> void {
-    global.cpu = mos6502::CPU{};
-    constexpr Address start = 0x0600;
-    constexpr Byte frame_counter_zp = static_cast<Byte>(0x10);
-    constexpr Address interrupt_handler = 0x0700;
-    auto pw = mos6502::ProgramWriter(global.cpu, start);
-
-    auto emit_relative_operand = [&](Address target) -> void {
-        const int next_pc = static_cast<int>(pw.addr + 1u);
-        const int rel = static_cast<int>(target) - next_pc;
-        assert(rel >= -128 && rel <= 127);
-        pw(static_cast<Byte>(rel & 0xFF));
-    };
-
-    // 32x32 framebuffer at $0200-$05FF.
-    // Pattern updates every frame using X index + frame counter.
-    pw.cld();
-    pw.lda_immediate();
-    pw(static_cast<Byte>(0x00));
-    pw.sta_zero_page();
-    pw(frame_counter_zp);
-
-    const Address frame_loop = pw.addr;
-    pw.ldx_immediate();
-    pw(static_cast<Byte>(0x00));
-    const Address pixel_loop = pw.addr;
-    pw.txa();
-    pw.clc();
-    pw.adc_zero_page();
-    pw(frame_counter_zp);
-    pw.sta_absolute_x();
-    pw(static_cast<Byte>(0x00));
-    pw(static_cast<Byte>(0x02));
-    pw.clc();
-    pw.adc_immediate();
-    pw(static_cast<Byte>(0x11));
-    pw.sta_absolute_x();
-    pw(static_cast<Byte>(0x00));
-    pw(static_cast<Byte>(0x03));
-    pw.clc();
-    pw.adc_immediate();
-    pw(static_cast<Byte>(0x11));
-    pw.sta_absolute_x();
-    pw(static_cast<Byte>(0x00));
-    pw(static_cast<Byte>(0x04));
-    pw.clc();
-    pw.adc_immediate();
-    pw(static_cast<Byte>(0x11));
-    pw.sta_absolute_x();
-    pw(static_cast<Byte>(0x00));
-    pw(static_cast<Byte>(0x05));
-    pw.inx();
-    pw.bne();
-    emit_relative_operand(pixel_loop);
-    pw.inc_zero_page();
-    pw(frame_counter_zp);
-    pw.jmp_absolute();
-    pw(static_cast<Byte>(frame_loop & 0x00FFu));
-    pw(static_cast<Byte>(frame_loop >> 8));
-
-    // Minimal interrupt handler for manual IRQ/NMI triggers in the UI.
-    global.cpu.mem[interrupt_handler] = static_cast<Byte>(0x40); // RTI
-    global.cpu.mem[0xFFFA] = static_cast<Byte>(interrupt_handler & 0x00FFu);
-    global.cpu.mem[0xFFFB] = static_cast<Byte>(interrupt_handler >> 8);
-    global.cpu.mem[0xFFFE] = static_cast<Byte>(interrupt_handler & 0x00FFu);
-    global.cpu.mem[0xFFFF] = static_cast<Byte>(interrupt_handler >> 8);
-
-    global.cpu.PC = start;
-}
+#include "demo.hpp"
 
 auto main() -> int {
     println("Application starting");
@@ -105,7 +35,7 @@ auto main() -> int {
     println("Engine setup complete");
 
     mos6502::initialize_instructions();
-    load_example_framebuffer_demo();
+    DEMO::load_mode(DEMO::Mode::framebuffer_pattern);
 
     global.debug_activate();
 
@@ -123,6 +53,7 @@ auto main() -> int {
         global.sim.total_runtime = now - global.sim.run_start_time;
 
         INPUT::handle_input();
+        DEMO::update();
 
         if (global.sim.is_debugging) {
             if (global.sim.step_once) {
