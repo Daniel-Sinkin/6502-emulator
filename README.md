@@ -10,6 +10,18 @@ OpenGL + SDL2 + Dear ImGui MOS 6502 emulator/debugger.
 - Dear ImGui docking enabled for a cleaner, dockable debugger layout.
 - Static support matrix image for portfolio/CV presentation.
 
+## Screenshots
+**Debugger / basic view**
+
+![6502 emulator basic debugger view](images/Basic.png)
+
+**6502 Snake demo**
+
+![6502 snake running in framebuffer](images/Snake.png)
+
+## Progress Tracker
+![6502 Emulator Support Matrix](assets/portfolio/support-matrix.svg)
+
 ## Known limitations
 - Timing is not cycle-accurate yet.
 - Interrupt handling is instruction-boundary accurate (`IRQ`/`NMI` vectors + stack/status push), but not cycle-accurate bus timing.
@@ -70,18 +82,6 @@ Debug stepping keeps a fixed-capacity timeline (`240` steps by default) and stor
   - `$00F1`: host tick counter (increments every snake step interval)
   - `$00F2`: score mirror
   - `$00F3`: state (`0=running 1=game over`)
-
-## Screenshots
-**Debugger / basic view**
-
-![6502 emulator basic debugger view](images/Basic.png)
-
-**6502 Snake demo**
-
-![6502 snake running in framebuffer](images/Snake.png)
-
-## Portfolio Support Matrix
-![6502 Emulator Support Matrix](assets/portfolio/support-matrix.svg)
 
 ## References
 - [Datasheet](https://web.archive.org/web/20221029042234if_/http://archive.6502.org/datasheets/mos_6500_mpu_preliminary_may_1976.pdf)
