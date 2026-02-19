@@ -5,7 +5,7 @@ BUILD_DIR="build"
 GENERATOR="Unix Makefiles"        
 BEEP_OUT="assets/sound/beep.wav"  
 
-echo "Generating CHIP-8 beep…"
+echo "Generating beep tone..."
 mkdir -p "$(dirname "$BEEP_OUT")"
 PYTHON_BIN=$(command -v python3 || command -v python)
 if [ -z "$PYTHON_BIN" ]; then
@@ -15,7 +15,7 @@ fi
 "$PYTHON_BIN" util/generate_beep.py --output "$BEEP_OUT"
 
 if [ -d "$BUILD_DIR" ]; then
-  echo "🧹  Removing old $BUILD_DIR to avoid generator conflicts…"
+  echo "Removing old $BUILD_DIR to avoid generator conflicts..."
   rm -rf "$BUILD_DIR"
 fi
 mkdir -p "$BUILD_DIR"
