@@ -15,6 +15,8 @@ inline constexpr int window_height = 720;
 inline constexpr float aspect_ratio = static_cast<float>(window_width) / window_height;
 
 inline constexpr size_t n_iter_per_frame = 700;
+inline constexpr double cpu_clock_hz_6502 = 1'000'000.0;
+inline constexpr size_t max_realtime_ticks_per_frame = 200'000;
 inline constexpr auto timer_update_delay = 16'666'667ns; // 1 second / 60 in nanoseconds
 
 inline constexpr std::array<float, 12> square_vertices = {

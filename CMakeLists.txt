@@ -39,7 +39,7 @@ FetchContent_MakeAvailable(glad)
 FetchContent_Declare(
     imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.89.2
+    GIT_TAG docking
 )
 FetchContent_MakeAvailable(imgui)
 
@@ -164,7 +164,7 @@ add_library(imgui_impl STATIC
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
     ${imgui_SOURCE_DIR}/imgui_tables.cpp
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 enable_project_pch(imgui_impl)

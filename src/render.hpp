@@ -1,19 +1,17 @@
 #pragma once
 
 #include <backends/imgui_impl_opengl3.h>
-#include <backends/imgui_impl_sdl.h>
+#include <backends/imgui_impl_sdl2.h>
 #include <glad/glad.h>
 #include <imgui.h>
 
 #include <algorithm>
 #include <array>
 #include <cctype>
-#include <cfloat>
 #include <cstddef>
 #include <cstdio>
 #include <string>
 
-#include "demo.hpp"
 #include "global.hpp"
 #include "utils.hpp"
 
@@ -780,201 +778,6 @@ inline auto draw_framebuffer_window(const mos6502::CPU &cpu) -> void {
     ImGui::End();
 }
 
-struct CoverageStats {
-    int mapped_opcodes = 0;
-    int opcode_slots_total = 256;
-    int official_opcodes_total = 151;
-    int unofficial_opcodes_total = 105;
-    int unofficial_mapped = 0;
-    int instruction_families_used = 0;
-    int instruction_families_total = 0;
-    int addressing_modes_used = 0;
-    int addressing_modes_total = 0;
-};
-
-[[nodiscard]] inline auto compute_coverage_stats() -> CoverageStats {
-    CoverageStats stats{};
-    constexpr std::size_t instruction_count =
-        static_cast<std::size_t>(mos6502::InstructionType::tya) + 1u;
-    constexpr std::size_t mode_count =
-        static_cast<std::size_t>(mos6502::AddressingMode::indirect) + 1u;
-
-    std::array<bool, instruction_count> instruction_seen{};
-    std::array<bool, mode_count> mode_seen{};
-
-    for (const auto &instr : mos6502::instructions) {
-        if (instr.type == mos6502::InstructionType::NONE) {
-            continue;
-        }
-        ++stats.mapped_opcodes;
-        instruction_seen[static_cast<std::size_t>(instr.type)] = true;
-        mode_seen[static_cast<std::size_t>(instr.mode)] = true;
-    }
-
-    stats.unofficial_mapped = std::max(0, stats.mapped_opcodes - stats.official_opcodes_total);
-
-    for (std::size_t i = 1u; i < instruction_seen.size(); ++i) {
-        if (instruction_seen[i]) {
-            ++stats.instruction_families_used;
-        }
-    }
-    for (std::size_t i = 1u; i < mode_seen.size(); ++i) {
-        if (mode_seen[i]) {
-            ++stats.addressing_modes_used;
-        }
-    }
-
-    stats.instruction_families_total = static_cast<int>(instruction_seen.size() - 1u);
-    stats.addressing_modes_total = static_cast<int>(mode_seen.size() - 1u);
-    return stats;
-}
-
-[[nodiscard]] inline auto
-percent_value(int part, int total) -> float {
-    if (total <= 0) {
-        return 0.0f;
-    }
-    return static_cast<float>(part) * 100.0f / static_cast<float>(total);
-}
-
-inline auto draw_percent_bar(float percent) -> void {
-    float clamped = std::clamp(percent, 0.0f, 100.0f);
-    char label[24];
-    std::snprintf(label, sizeof(label), "%.1f%%", static_cast<double>(clamped));
-    ImGui::ProgressBar(clamped / 100.0f, ImVec2(-FLT_MIN, 0.0f), label);
-}
-
-inline auto draw_portfolio_dashboard_window() -> void {
-    const CoverageStats stats = compute_coverage_stats();
-    const float mapped_opcode_coverage = percent_value(stats.mapped_opcodes, stats.opcode_slots_total);
-    const float official_coverage = percent_value(std::min(stats.mapped_opcodes, stats.official_opcodes_total), stats.official_opcodes_total);
-    const float unofficial_coverage = percent_value(stats.unofficial_mapped, stats.unofficial_opcodes_total);
-    const float family_coverage = percent_value(stats.instruction_families_used, stats.instruction_families_total);
-    const float mode_coverage = percent_value(stats.addressing_modes_used, stats.addressing_modes_total);
-    const bool jmp_wrap_bug_compatible = global.cpu.config.preserve_indirect_jump_page_cross_bug;
-
-    struct SupportRow {
-        const char *area;
-        float support_pct;
-        float hardware_pct;
-        const char *note;
-    };
-
-    const std::array<SupportRow, 8> support_rows = {{
-        {"Official opcode decode/execute", official_coverage, 100.0f, "All 151 documented opcodes are mapped and executable."},
-        {"Addressing modes", mode_coverage, 100.0f, "All documented modes are implemented (immediate, zero-page, absolute, indirect, relative, etc)."},
-        {"Decimal mode arithmetic", 100.0f, 90.0f, "ADC/SBC BCD mode paths are implemented and covered by tests."},
-        {"Interrupt behavior (IRQ/NMI/BRK)", 100.0f, 85.0f, "Vector dispatch + stack/status behavior are modeled at instruction boundaries."},
-        {"JMP indirect page-wrap quirk", jmp_wrap_bug_compatible ? 100.0f : 0.0f, jmp_wrap_bug_compatible ? 100.0f : 0.0f, "6502 page-wrap compatibility toggle is present and enabled by default."},
-        {"Cycle-level timing fidelity", 35.0f, 35.0f, "Per-tick execution exists, but full cycle-accurate bus timing remains open."},
-        {"Unofficial opcode support", unofficial_coverage, unofficial_coverage, "Undocumented opcode slots are intentionally unimplemented right now."},
-        {"Memory-mapped I/O showcase", DEMO::active_mode() == DEMO::Mode::snake ? 60.0f : 40.0f, DEMO::active_mode() == DEMO::Mode::snake ? 50.0f : 35.0f, "Snake demo uses host-driven input bytes at $00F0-$00F3 and renders via $0200-$05FF."},
-    }};
-
-    ImGui::Begin("Portfolio Dashboard");
-    ImGui::TextWrapped("Portfolio view for completeness and hardware-fidelity storytelling.");
-    ImGui::Separator();
-
-    ImGui::Text("Coverage KPIs");
-    if (ImGui::BeginTable("portfolio_kpis", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV)) {
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Opcode map: %d / %d", stats.mapped_opcodes, stats.opcode_slots_total);
-        ImGui::TableSetColumnIndex(1);
-        draw_percent_bar(mapped_opcode_coverage);
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Official opcodes: %d / %d", std::min(stats.mapped_opcodes, stats.official_opcodes_total), stats.official_opcodes_total);
-        ImGui::TableSetColumnIndex(1);
-        draw_percent_bar(official_coverage);
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Instruction families: %d / %d", stats.instruction_families_used, stats.instruction_families_total);
-        ImGui::TableSetColumnIndex(1);
-        draw_percent_bar(family_coverage);
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::Text("Addressing modes: %d / %d", stats.addressing_modes_used, stats.addressing_modes_total);
-        ImGui::TableSetColumnIndex(1);
-        draw_percent_bar(mode_coverage);
-        ImGui::EndTable();
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Support Matrix");
-    if (ImGui::BeginTable("support_matrix", 4,
-            ImGuiTableFlags_RowBg |
-                ImGuiTableFlags_Borders |
-                ImGuiTableFlags_SizingStretchProp)) {
-        ImGui::TableSetupColumn("Area");
-        ImGui::TableSetupColumn("Support");
-        ImGui::TableSetupColumn("HW Closeness");
-        ImGui::TableSetupColumn("Notes");
-        ImGui::TableHeadersRow();
-
-        for (const auto &row : support_rows) {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::TextUnformatted(row.area);
-
-            ImGui::TableSetColumnIndex(1);
-            ImGui::PushID(row.area);
-            draw_percent_bar(row.support_pct);
-            ImGui::PopID();
-
-            ImGui::TableSetColumnIndex(2);
-            ImGui::PushID(row.note);
-            draw_percent_bar(row.hardware_pct);
-            ImGui::PopID();
-
-            ImGui::TableSetColumnIndex(3);
-            ImGui::TextWrapped("%s", row.note);
-        }
-        ImGui::EndTable();
-    }
-
-    ImGui::Separator();
-    ImGui::Text("Interactive Showcase");
-    int selected_demo = (DEMO::active_mode() == DEMO::Mode::snake) ? 1 : 0;
-    if (ImGui::RadioButton("Pattern Program (pure 6502)", selected_demo == 0)) {
-        DEMO::load_mode(DEMO::Mode::framebuffer_pattern);
-    }
-    if (ImGui::RadioButton("Snake (framebuffer + host I/O)", selected_demo == 1)) {
-        DEMO::load_mode(DEMO::Mode::snake);
-    }
-    if (ImGui::Button("Reset Active Demo")) {
-        DEMO::reset_active_mode();
-    }
-    ImGui::Text("Current demo: %s", DEMO::active_mode_label());
-
-    if (DEMO::active_mode() == DEMO::Mode::snake) {
-        const auto &snake = DEMO::snake_state();
-        ImGui::Text("Score: %d   Length: %zu", snake.score, snake.length);
-        ImGui::Text("State: %s", snake.game_over ? "game over" : (snake.paused ? "paused" : "running"));
-        ImGui::Text("I/O bytes: dir=$00F0 tick=$00F1 score=$00F2 gameover=$00F3");
-
-        int tick_ms = DEMO::snake_tick_ms();
-        if (ImGui::SliderInt("Snake Tick (ms)", &tick_ms, 40, 400)) {
-            DEMO::set_snake_tick_ms(tick_ms);
-        }
-        if (ImGui::Button(snake.paused ? "Resume Snake" : "Pause Snake")) {
-            DEMO::toggle_snake_pause();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Restart Snake")) {
-            DEMO::reset_snake();
-        }
-        ImGui::Text("Controls: Arrow keys / WASD, R to reset");
-    } else {
-        ImGui::TextWrapped("Pattern program writes directly to $0200-$05FF from 6502 code generated at startup.");
-    }
-
-    ImGui::End();
-}
-
 inline auto cpu_register(mos6502::CPU &cpu) -> void {
     ImGui::Text("Registers");
     if (ImGui::BeginTable("cpu_registers", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV)) {
@@ -1021,10 +824,42 @@ inline auto cpu_register(mos6502::CPU &cpu) -> void {
         mos6502::to_string(cpu.instr.type),
         cpu.instr_counter);
 }
+
+inline auto begin_dockspace() -> void {
+    ImGuiIO &io = ImGui::GetIO();
+    if ((io.ConfigFlags & ImGuiConfigFlags_DockingEnable) == 0) {
+        return;
+    }
+
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking |
+                                    ImGuiWindowFlags_NoTitleBar |
+                                    ImGuiWindowFlags_NoCollapse |
+                                    ImGuiWindowFlags_NoResize |
+                                    ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                    ImGuiWindowFlags_NoNavFocus |
+                                    ImGuiWindowFlags_NoBackground;
+
+    const ImGuiViewport *viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("MainDockSpaceHost", nullptr, window_flags);
+    ImGui::PopStyleVar(3);
+
+    const ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::End();
+}
+
 inline auto gui_debug() -> void {
     ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(global.renderer.window);
+    ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
+    begin_dockspace();
 
     /* ------------------------------------------------------------------ Debug */
     ImGui::Begin("Debug");
@@ -1035,6 +870,14 @@ inline auto gui_debug() -> void {
     ImGui::Text("Runtime: %s",
         UTIL::format_duration(global.sim.total_runtime).c_str());
     ImGui::Text("Delta Time (ms): %.3f", global.sim.delta_time.count());
+    ImGui::Text("Run Clock Mode: %s",
+        global.sim.realtime_clock_mode ? "real-time 6502 (~1 MHz)" : "fixed ticks/frame");
+    ImGui::Text("Ticks This Frame: %llu",
+        static_cast<unsigned long long>(global.sim.last_ticks_executed));
+    ImGui::Text("Instructions This Frame: %llu",
+        static_cast<unsigned long long>(global.sim.last_instructions_executed));
+    ImGui::Text("Instructions Total: %llu",
+        static_cast<unsigned long long>(global.sim.instructions_executed_total));
     ImGui::Text("Mouse Position: (%.3f, %.3f)",
         global.input.mouse_pos_x, global.input.mouse_pos_y);
     ImGui::Text("Is Debugging %s", global.sim.is_debugging ? "true" : "false");
@@ -1049,14 +892,13 @@ inline auto gui_debug() -> void {
         UTIL::byte_to_mb(global.cpu_history.estimated_payload_bytes()),
         global.cpu_history.total_changed_blocks(),
         mos6502::history_block_size);
-    ImGui::Text("Controls: N step | B back | F forward | SPACE run/pause | I IRQ toggle | M NMI pulse");
+    ImGui::Text("Controls: N step | B back | F forward | SPACE run/pause | T real-time 6502 | I IRQ toggle | M NMI pulse");
     ImGui::End();
 
     ImGui::Begin("CPU");
     cpu_register(global.cpu);
     ImGui::End();
 
-    draw_portfolio_dashboard_window();
     draw_code_window(global.cpu);
     draw_instruction_explainer_window(global.cpu);
     draw_framebuffer_window(global.cpu);

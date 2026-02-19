@@ -6,7 +6,7 @@
 using std::println;
 
 #include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_sdl.h"
+#include "backends/imgui_impl_sdl2.h"
 #include "imgui.h"
 #include <SDL.h>
 #include <glad/glad.h>
@@ -60,6 +60,8 @@ namespace ENGINE {
     ImGui::CreateContext();
 
     ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     global.renderer.imgui_io = io;
 
     ImFontConfig font_cfg;

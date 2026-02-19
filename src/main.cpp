@@ -6,11 +6,13 @@
 
 // ImGui backends
 #include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_sdl.h"
+#include "backends/imgui_impl_sdl2.h"
 #include "imgui.h"
 
 // Standard library
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 
 // Project headers
@@ -35,7 +37,7 @@ auto main() -> int {
     println("Engine setup complete");
 
     mos6502::initialize_instructions();
-    DEMO::load_mode(DEMO::Mode::framebuffer_pattern);
+    DEMO::load_default_demo();
 
     global.debug_activate();
 
@@ -55,13 +57,30 @@ auto main() -> int {
         INPUT::handle_input();
         DEMO::update();
 
+        global.sim.last_ticks_executed = 0;
+        global.sim.last_instructions_executed = 0;
+        auto tick_and_count_instruction = [&]() -> void {
+            const bool was_executing_instruction =
+                global.cpu.addr_result.type != mos6502::AddrResultType::load_instruction;
+            mos6502::tick(global.cpu);
+            const bool completed_instruction =
+                was_executing_instruction &&
+                global.cpu.addr_result.type == mos6502::AddrResultType::load_instruction &&
+                global.cpu.instr_counter == 0;
+            if (completed_instruction) {
+                ++global.sim.last_instructions_executed;
+                ++global.sim.instructions_executed_total;
+            }
+        };
+
         if (global.sim.is_debugging) {
             if (global.sim.step_once) {
                 const auto before_state = mos6502::capture_core_state(global.cpu);
                 const auto before_mem = global.cpu.mem;
-                mos6502::tick(global.cpu);
+                tick_and_count_instruction();
                 global.cpu_history.record_step(before_state, before_mem, global.cpu);
                 global.sim.step_once = false;
+                global.sim.last_ticks_executed = 1;
             } else if (global.sim.step_back) {
                 if (!global.cpu_history.step_back(global.cpu)) {
                     println("Tried to step back but history is empty");
@@ -74,7 +93,21 @@ auto main() -> int {
                 global.sim.step_forward = false;
             }
         } else {
-            mos6502::tick(global.cpu);
+            std::size_t ticks_to_run = CONSTANTS::n_iter_per_frame;
+            if (global.sim.realtime_clock_mode) {
+                const double target_ticks = (global.sim.delta_time.count() * CONSTANTS::cpu_clock_hz_6502) +
+                                            global.sim.cpu_tick_fractional_remainder;
+                const double floored_ticks = std::floor(std::max(0.0, target_ticks));
+                ticks_to_run = static_cast<std::size_t>(floored_ticks);
+                global.sim.cpu_tick_fractional_remainder = target_ticks - floored_ticks;
+                ticks_to_run = std::min(ticks_to_run, CONSTANTS::max_realtime_ticks_per_frame);
+            } else {
+                global.sim.cpu_tick_fractional_remainder = 0.0;
+            }
+            global.sim.last_ticks_executed = static_cast<uint64_t>(ticks_to_run);
+            for (std::size_t i = 0; i < ticks_to_run; ++i) {
+                tick_and_count_instruction();
+            }
         }
 
         RENDER::gui_debug();

@@ -7,8 +7,8 @@ OpenGL + SDL2 + Dear ImGui MOS 6502 emulator/debugger.
 - Instruction families: implemented in `exec_func` (`src/6502/6502.hpp`).
 - Addressing modes: implemented (`immediate`, `zero_page*`, `absolute*`, `indirect*`, `relative`, `accum`, `implied`).
 - Debug UI: register view, memory windows, framebuffer view, disassembly with inline comments, and an `Instruction Explain` panel with 3-4 human-readable lines using live register/memory values.
-- Portfolio dashboard: in-app KPI bars + support matrix with `% support` and hardware-closeness scoring.
-- Interactive showcase modes: pure-6502 framebuffer pattern + keyboard-driven snake using memory-mapped I/O bytes.
+- Dear ImGui docking enabled for a cleaner, dockable debugger layout.
+- Static support matrix image for portfolio/CV presentation.
 
 ## Known limitations
 - Timing is not cycle-accurate yet.
@@ -54,28 +54,25 @@ The BSD-3-Clause notice is included at `tests/third_party/py65.LICENSE`.
 - `F`: step forward (redo)
 - `I`: toggle IRQ line
 - `M`: pulse NMI
-- `Arrow keys` / `WASD`: snake direction (when snake demo is active)
-- `R`: reset active demo (snake restart or pattern reset)
+- `T`: toggle real-time 6502 clock mode (~1 MHz)
+- `Arrow keys` / `WASD`: snake direction (written to `$00F0`)
+- `R`: reset demo
 - `ESC`: quit
 
 Debug stepping keeps a fixed-capacity timeline (`240` steps by default) and stores RAM changes as block deltas (`256`-byte blocks) instead of full 64KB snapshots per step.
 
-## Included runnable demos
-Use the ImGui window `Portfolio Dashboard` to switch between demos:
+## Included runnable demo
+- Loads a generated **6502 snake** program at `$0600`
+- Uses `$0200-$05FF` as a 32x32 pixel framebuffer
+- Snake game logic runs on the emulated CPU (movement, tail follow, collision, food placement)
+- Host I/O bridge (memory-mapped):
+  - `$00F0`: requested direction (`1=up 2=right 3=down 4=left`)
+  - `$00F1`: host tick counter (increments every snake step interval)
+  - `$00F2`: score mirror
+  - `$00F3`: state (`0=running 1=game over`)
 
-1. `Pattern Program (pure 6502)`:
-- Loads a generated 6502 program at `$0600`
-- Treats `$0200-$05FF` as a 32x32 pixel buffer
-- Continuously fills it with an animated pattern using only 6502 instructions
-
-2. `Snake (framebuffer + host I/O)`:
-- Renders to the same `$0200-$05FF` framebuffer window
-- Accepts direction input from keyboard (`Arrow keys` / `WASD`)
-- Exposes input/game telemetry bytes for memory-map storytelling:
-  - `$00F0`: direction
-  - `$00F1`: snake tick counter
-  - `$00F2`: score
-  - `$00F3`: game-over flag
+## Portfolio Support Matrix
+![6502 Emulator Support Matrix](assets/portfolio/support-matrix.svg)
 
 ## References
 - [Datasheet](https://web.archive.org/web/20221029042234if_/http://archive.6502.org/datasheets/mos_6500_mpu_preliminary_may_1976.pdf)

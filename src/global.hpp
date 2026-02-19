@@ -44,6 +44,11 @@ struct SimulationState {
     std::chrono::steady_clock::time_point frame_start_time;
     std::chrono::duration<double> delta_time;
     std::chrono::duration<double> total_runtime;
+    bool realtime_clock_mode = false;
+    double cpu_tick_fractional_remainder = 0.0;
+    uint64_t last_ticks_executed = 0;
+    uint64_t last_instructions_executed = 0;
+    uint64_t instructions_executed_total = 0;
     bool is_debugging = false;
     bool step_once = false;
     bool step_back = false;

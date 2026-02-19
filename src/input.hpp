@@ -6,7 +6,7 @@
 #include "types.hpp"
 #include "utils.hpp"
 
-#include "backends/imgui_impl_sdl.h"
+#include "backends/imgui_impl_sdl2.h"
 #include <SDL.h>
 
 namespace INPUT {
@@ -39,32 +39,34 @@ inline auto handle_event(const SDL_Event &event) -> void {
 
         case SDLK_UP:
         case SDLK_w:
-            DEMO::request_snake_direction(0, -1);
+            DEMO::set_direction_up();
             break;
 
         case SDLK_RIGHT:
         case SDLK_d:
-            DEMO::request_snake_direction(1, 0);
+            DEMO::set_direction_right();
             break;
 
         case SDLK_DOWN:
         case SDLK_s:
-            DEMO::request_snake_direction(0, 1);
+            DEMO::set_direction_down();
             break;
 
         case SDLK_LEFT:
         case SDLK_a:
-            DEMO::request_snake_direction(-1, 0);
+            DEMO::set_direction_left();
             break;
 
         case SDLK_r:
-            if (DEMO::active_mode() == DEMO::Mode::snake) {
-                DEMO::reset_snake();
-                println("Snake demo reset");
-            } else {
-                DEMO::reset_active_mode();
-                println("Pattern demo reset");
-            }
+            DEMO::reset_active_demo();
+            println("Demo reset");
+            break;
+
+        case SDLK_t:
+            global.sim.realtime_clock_mode = !global.sim.realtime_clock_mode;
+            global.sim.cpu_tick_fractional_remainder = 0.0;
+            println("Run clock mode: %s",
+                global.sim.realtime_clock_mode ? "real-time 6502 (~1 MHz)" : "fixed ticks/frame");
             break;
 
         case SDLK_n:
