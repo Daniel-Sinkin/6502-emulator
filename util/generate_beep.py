@@ -1,25 +1,31 @@
 import argparse
+import math
 import wave
+from array import array
 from pathlib import Path
 
-import numpy as np
-from numpy.typing import NDArray  # type: ignore
-
-
 def generate_square_wave(
-    frequency: float, duration: float, volume: float, sample_rate: int
-) -> NDArray[np.int16]:
-    t: NDArray[np.float32] = np.linspace(
-        0, duration, int(sample_rate * duration), endpoint=False, dtype=np.float32
-    )
-    waveform: NDArray[np.float32] = 0.5 * np.sign(np.sin(2 * np.pi * frequency * t))
-    return (waveform * volume * 32767).astype(np.int16)
+    frequency: float,
+    duration: float,
+    volume: float,
+    sample_rate: int,
+) -> array:
+    samples = array("h")
+    total_samples = int(sample_rate * duration)
+    clamped_volume = max(0.0, min(1.0, volume))
+    amplitude = int(clamped_volume * 32767)
+
+    for i in range(total_samples):
+        theta = 2.0 * math.pi * frequency * (i / sample_rate)
+        sample = amplitude if math.sin(theta) >= 0.0 else -amplitude
+        samples.append(sample)
+
+    return samples
 
 
-def write_wave_file(
-    filename: Path, samples: NDArray[np.int16], sample_rate: int
-) -> None:
-    with wave.open(str(filename), "w") as wf:
+def write_wave_file(filename: Path, samples: array, sample_rate: int) -> None:
+    filename.parent.mkdir(parents=True, exist_ok=True)
+    with wave.open(str(filename), "wb") as wf:
         wf.setnchannels(1)  # mono
         wf.setsampwidth(2)  # 2 bytes per sample (16-bit)
         wf.setframerate(sample_rate)
@@ -55,7 +61,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    samples: NDArray[np.int16] = generate_square_wave(
+    samples = generate_square_wave(
         args.frequency, args.duration, args.volume, args.samplerate
     )
     write_wave_file(args.output, samples, args.samplerate)
