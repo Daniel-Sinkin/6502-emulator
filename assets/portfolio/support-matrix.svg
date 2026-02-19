@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="title desc">
   <title id="title">6502 Emulator Support Matrix</title>
-  <desc id="desc">Coverage and hardware-closeness matrix for major 6502 emulator capabilities.</desc>
+  <desc id="desc">Feature coverage and accuracy matrix for major 6502 emulator capabilities.</desc>
   <defs>
     <style>
       @font-face {
@@ -24,74 +24,68 @@
   <rect class="panel" x="36" y="34" width="1208" height="692" rx="14"/>
 
   <text class="head" x="64" y="88">6502 Emulator Support Matrix</text>
-  <text class="sub" x="64" y="118">Coverage and hardware-closeness overview.</text>
+  <text class="sub" x="64" y="118">Feature and accuracy overview.</text>
 
   <text class="text" x="64" y="168">Area</text>
-  <text class="text" x="460" y="168">Support</text>
-  <text class="text" x="664" y="168">Hardware Closeness</text>
-  <text class="text" x="870" y="168">Notes</text>
+  <text class="text" x="420" y="168">Features</text>
+  <text class="text" x="610" y="168">Accuracy</text>
+  <text class="text" x="800" y="168">Notes</text>
 
   <line class="grid" x1="52" y1="186" x2="1228" y2="186"/>
 
   <!-- Row 1 -->
   <text class="text" x="64" y="226">Official opcode decode/execute</text>
-  <rect class="bar-bg" x="460" y="206" width="170" height="24" rx="5"/>
-  <rect class="bar-support" x="460" y="206" width="170" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="206" width="170" height="24" rx="5"/>
-  <rect class="bar-hw" x="664" y="206" width="170" height="24" rx="5"/>
-  <text class="muted" x="870" y="226">All 151 documented opcodes mapped.</text>
+  <rect class="bar-bg" x="420" y="206" width="150" height="24" rx="5"/>
+  <rect class="bar-support" x="420" y="206" width="150" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="206" width="150" height="24" rx="5"/>
+  <rect class="bar-hw" x="610" y="206" width="150" height="24" rx="5"/>
+  <text class="muted" x="800" y="226">All 151 documented opcodes mapped.</text>
 
   <!-- Row 2 -->
   <text class="text" x="64" y="280">Addressing modes</text>
-  <rect class="bar-bg" x="460" y="260" width="170" height="24" rx="5"/>
-  <rect class="bar-support" x="460" y="260" width="170" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="260" width="170" height="24" rx="5"/>
-  <rect class="bar-hw" x="664" y="260" width="170" height="24" rx="5"/>
-  <text class="muted" x="870" y="280">Immediate, zero-page, absolute, indirect.</text>
+  <rect class="bar-bg" x="420" y="260" width="150" height="24" rx="5"/>
+  <rect class="bar-support" x="420" y="260" width="150" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="260" width="150" height="24" rx="5"/>
+  <rect class="bar-hw" x="610" y="260" width="150" height="24" rx="5"/>
+  <text class="muted" x="800" y="280">Immediate, zero-page, absolute, indirect.</text>
 
   <!-- Row 3 -->
   <text class="text" x="64" y="334">Decimal mode arithmetic (ADC/SBC)</text>
-  <rect class="bar-bg" x="460" y="314" width="170" height="24" rx="5"/>
-  <rect class="bar-support" x="460" y="314" width="170" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="314" width="170" height="24" rx="5"/>
-  <rect class="bar-hw" x="664" y="314" width="153" height="24" rx="5"/>
-  <text class="muted" x="870" y="334">BCD paths implemented and tested.</text>
+  <rect class="bar-bg" x="420" y="314" width="150" height="24" rx="5"/>
+  <rect class="bar-support" x="420" y="314" width="150" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="314" width="150" height="24" rx="5"/>
+  <rect class="bar-hw" x="610" y="314" width="135" height="24" rx="5"/>
+  <text class="muted" x="800" y="334">BCD paths implemented and tested.</text>
 
   <!-- Row 4 -->
   <text class="text" x="64" y="388">Interrupt vectors (IRQ/NMI/BRK)</text>
-  <rect class="bar-bg" x="460" y="368" width="170" height="24" rx="5"/>
-  <rect class="bar-support" x="460" y="368" width="170" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="368" width="170" height="24" rx="5"/>
-  <rect class="bar-hw" x="664" y="368" width="145" height="24" rx="5"/>
-  <text class="muted" x="870" y="388">Instruction-boundary behavior modeled.</text>
+  <rect class="bar-bg" x="420" y="368" width="150" height="24" rx="5"/>
+  <rect class="bar-support" x="420" y="368" width="150" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="368" width="150" height="24" rx="5"/>
+  <rect class="bar-hw" x="610" y="368" width="128" height="24" rx="5"/>
+  <text class="muted" x="800" y="388">Instruction-boundary behavior modeled.</text>
 
   <!-- Row 5 -->
   <text class="text" x="64" y="442">JMP indirect page-wrap quirk</text>
-  <rect class="bar-bg" x="460" y="422" width="170" height="24" rx="5"/>
-  <rect class="bar-support" x="460" y="422" width="170" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="422" width="170" height="24" rx="5"/>
-  <rect class="bar-hw" x="664" y="422" width="170" height="24" rx="5"/>
-  <text class="muted" x="870" y="442">Wrap quirk enabled by default.</text>
+  <rect class="bar-bg" x="420" y="422" width="150" height="24" rx="5"/>
+  <rect class="bar-support" x="420" y="422" width="150" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="422" width="150" height="24" rx="5"/>
+  <rect class="bar-hw" x="610" y="422" width="150" height="24" rx="5"/>
+  <text class="muted" x="800" y="442">Wrap quirk enabled by default.</text>
 
   <!-- Row 6 -->
   <text class="text" x="64" y="496">Cycle-level timing fidelity</text>
-  <rect class="bar-bg" x="460" y="476" width="170" height="24" rx="5"/>
-  <rect class="bar-support" x="460" y="476" width="60" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="476" width="170" height="24" rx="5"/>
-  <rect class="bar-hw" x="664" y="476" width="60" height="24" rx="5"/>
-  <text class="muted" x="870" y="496">Cycle-accurate bus timing still pending.</text>
+  <rect class="bar-bg" x="420" y="476" width="150" height="24" rx="5"/>
+  <rect class="bar-support" x="420" y="476" width="52" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="476" width="150" height="24" rx="5"/>
+  <rect class="bar-hw" x="610" y="476" width="52" height="24" rx="5"/>
+  <text class="muted" x="800" y="496">Cycle-accurate bus timing still pending.</text>
 
   <!-- Row 7 -->
   <text class="text" x="64" y="550">Unofficial opcode support</text>
-  <rect class="bar-bg" x="460" y="530" width="170" height="24" rx="5"/>
-  <rect class="bar-bg" x="664" y="530" width="170" height="24" rx="5"/>
-  <text class="muted" x="870" y="550">Undocumented opcodes intentionally omitted.</text>
+  <rect class="bar-bg" x="420" y="530" width="150" height="24" rx="5"/>
+  <rect class="bar-bg" x="610" y="530" width="150" height="24" rx="5"/>
+  <text class="muted" x="800" y="550">Undocumented opcodes intentionally omitted.</text>
 
-  <line class="grid" x1="52" y1="588" x2="1228" y2="588"/>
-
-  <rect class="bar-support" x="64" y="616" width="18" height="18" rx="4"/>
-  <text class="sub" x="90" y="631">Support (feature completeness)</text>
-  <rect class="bar-hw" x="360" y="616" width="18" height="18" rx="4"/>
-  <text class="sub" x="386" y="631">Hardware closeness (behavior fidelity)</text>
-  <text class="muted" x="64" y="668">Reference: MOS Technology MCS6500 Microcomputer Family Programming Manual (1976).</text>
+  <text class="muted" x="64" y="618">Reference: MOS Technology MCS6500 Microcomputer Family Programming Manual (1976).</text>
 </svg>
