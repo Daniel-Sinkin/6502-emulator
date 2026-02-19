@@ -71,6 +71,15 @@ Debug stepping keeps a fixed-capacity timeline (`240` steps by default) and stor
   - `$00F2`: score mirror
   - `$00F3`: state (`0=running 1=game over`)
 
+## Screenshots
+**Debugger / basic view**
+
+![6502 emulator basic debugger view](images/Basic.png)
+
+**6502 Snake demo**
+
+![6502 snake running in framebuffer](images/Snake.png)
+
 ## Portfolio Support Matrix
 ![6502 Emulator Support Matrix](assets/portfolio/support-matrix.svg)
 
