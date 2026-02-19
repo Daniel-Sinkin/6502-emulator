@@ -20,7 +20,7 @@ OpenGL + SDL2 + Dear ImGui MOS 6502 emulator/debugger.
 ![6502 snake running in framebuffer](images/Snake.png)
 
 ## Progress Tracker
-![6502 Emulator Support Matrix](assets/portfolio/support-matrix.svg)
+![6502 Emulator Progress Tracker](assets/portfolio/support-matrix.svg)
 
 ## Known limitations
 - Timing is not cycle-accurate yet.
